@@ -1,9 +1,11 @@
 package com.example.postgresneo4jmigrationtool.generator.dumper;
 
+import com.example.postgresneo4jmigrationtool.model.DumpResult;
+
 import java.util.Map;
 
 public interface PostgresDumper {
 
-    void dump(String tableName, Map<String, String> params);
+    DumpResult dump(String tableName, Map<String, String> columnsInfo);
 
 }

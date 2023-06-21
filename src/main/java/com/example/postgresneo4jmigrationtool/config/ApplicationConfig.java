@@ -10,7 +10,7 @@ public class ApplicationConfig {
 
     @Bean
     public Scanner scanner() {
-        return new Scanner(System.in);
+        return new Scanner(System.in).useDelimiter("\n");
     }
 
 }
