@@ -12,11 +12,8 @@ spring:
   data:
     neo4j:
       database: ${NEO4J_DATABASE}
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST}:5432/${POSTGRES_DATABASE}
+    url: jdbc:postgresql://${POSTGRES_HOST}:5432/${POSTGRES_DATABASE}?currentSchema=${POSTGRES_SCHEMA}
     username: ${POSTGRES_USERNAME}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver

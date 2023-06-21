@@ -1,15 +1,84 @@
 package com.example.postgresneo4jmigrationtool.repository.postgres;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Repository
+@RequiredArgsConstructor
 public class PostgresRepositoryImpl implements PostgresRepository {
 
+    private final JdbcTemplate jdbcTemplate;
+
+    @Value("${spring.datasource.url}")
+    private String datasourceURL;
+
+    @Value("${spring.datasource.username}")
+    private String username;
+
+    @Value("${spring.datasource.password}")
+    private String password;
+
     @Override
-    public List<String> getColumnNames() {
-        return null;
+    public String getUsername() {
+        return username;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getDatabaseName() {
+        int beginIndex = datasourceURL.lastIndexOf('/') + 1;
+        int endInder = datasourceURL.indexOf('?');
+        return datasourceURL.substring(beginIndex, endInder);
+    }
+
+    @Override
+    public String getSchemaName() {
+        int beginIndex = datasourceURL.lastIndexOf("=") + 1;
+        return datasourceURL.substring(beginIndex);
+    }
+
+    @Override
+    public List<String> getTablesNames() {
+        String query = """
+                SELECT table_schema,table_name FROM information_schema.tables
+                WHERE table_schema = '%s'
+                ORDER BY table_schema,table_name;
+                """;
+        String formattedQuery = String.format(query, getSchemaName());
+        return jdbcTemplate.query(formattedQuery, (rs, rowNum) -> rs.getString("table_name"));
+    }
+
+    @Override
+    public Map<String, String> getColumnsInfo(String tableName) {
+        String query = """
+                SELECT column_name, data_type
+                FROM information_schema.columns
+                WHERE table_schema = '%s'
+                AND table_name   = '%s';
+                """;
+        String formattedQuery = String.format(query, getSchemaName(), tableName);
+        List<Map<String, String>> resultList = jdbcTemplate.query(formattedQuery, (rs, rowNum) -> {
+            String columnName = rs.getString("column_name");
+            String columnType = rs.getString("data_type");
+            Map<String, String> map = new HashMap<>();
+            map.put(columnName, columnType);
+            return map;
+        });
+        Map<String, String> columnsInfo = new HashMap<>();
+        for (Map<String, String> map : resultList) {
+            columnsInfo.putAll(map);
+        }
+        return columnsInfo;
     }
 
 }
