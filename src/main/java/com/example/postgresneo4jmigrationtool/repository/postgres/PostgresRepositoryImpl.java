@@ -48,17 +48,6 @@ public class PostgresRepositoryImpl implements PostgresRepository {
     }
 
     @Override
-    public List<String> getTablesNames() {
-        String query = """
-                SELECT table_schema,table_name FROM information_schema.tables
-                WHERE table_schema = '%s'
-                ORDER BY table_schema,table_name;
-                """;
-        String formattedQuery = String.format(query, getSchemaName());
-        return jdbcTemplate.query(formattedQuery, (rs, rowNum) -> rs.getString("table_name"));
-    }
-
-    @Override
     public Map<String, String> getColumnsInfo(String tableName) {
         String query = """
                 SELECT column_name, data_type

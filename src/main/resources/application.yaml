@@ -25,3 +25,7 @@ spring:
 logging:
   level:
     root: OFF
+
+xml:
+  script:
+    path: ${XML_CONFIG_LOCATION}

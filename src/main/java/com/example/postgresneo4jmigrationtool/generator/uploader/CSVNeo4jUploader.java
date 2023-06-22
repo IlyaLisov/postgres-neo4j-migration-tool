@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -25,7 +26,7 @@ public class CSVNeo4jUploader implements Neo4jUploader {
             String[] columnNames = headers.split(String.valueOf(params.get("delimeter")));
             String datePattern = (String) params.get("datePattern");
             Map<String, String> newNames = (Map<String, String>) params.get("newNames");
-            String[] labels = (String[]) params.get("labels");
+            List<String> labels = (List<String>) params.get("labels");
             for (int i = 0; i < columnNames.length; i++) {
                 if (newNames.containsKey(columnNames[i])) {
                     columnNames[i] = newNames.get(columnNames[i]);
@@ -36,7 +37,7 @@ public class CSVNeo4jUploader implements Neo4jUploader {
                 String data = scanner.nextLine();
                 String[] values = data.split(String.valueOf(params.get("delimeter")));
                 Node node = new Node(columnNames, values);
-                neo4jRepository.addNode(node, labels);
+                neo4jRepository.addNode(node, labels.toArray(new String[0]));
                 nodeCounter++;
             }
             uploadResult.add("nodeCounter", nodeCounter);
