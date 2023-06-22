@@ -1,0 +1,22 @@
+<migration type="node">
+    <tables>
+        <table name="users">
+            <configuration>
+                <excludedColumns>
+                    <column>surname</column>
+                </excludedColumns>
+                <renamedColumns>
+                    <columns>
+                        <previousName>name</previousName>
+                        <newName>newName</newName>
+                    </columns>
+                </renamedColumns>
+            </configuration>
+            <labels>
+                <label>User</label>
+                <label>BaseEntity</label>
+            </labels>
+        </table>
+        <table name="tasks"/>
+    </tables>
+</migration>

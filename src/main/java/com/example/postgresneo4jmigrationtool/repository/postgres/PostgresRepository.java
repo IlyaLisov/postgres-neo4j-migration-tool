@@ -1,6 +1,5 @@
 package com.example.postgresneo4jmigrationtool.repository.postgres;
 
-import java.util.List;
 import java.util.Map;
 
 public interface PostgresRepository {
@@ -12,8 +11,6 @@ public interface PostgresRepository {
     String getDatabaseName();
 
     String getSchemaName();
-
-    List<String> getTablesNames();
 
     Map<String, String> getColumnsInfo(String tableName);
 

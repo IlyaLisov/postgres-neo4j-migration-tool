@@ -1,6 +1,6 @@
 package com.example.postgresneo4jmigrationtool;
 
-import com.example.postgresneo4jmigrationtool.command.UserUI;
+import com.example.postgresneo4jmigrationtool.parser.Parser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,8 +12,8 @@ public class PostgresNeo4jMigrationToolApplication {
 
     public static void main(String[] args) {
         ConfigurableApplicationContext appContext = SpringApplication.run(PostgresNeo4jMigrationToolApplication.class, args);
-        UserUI userUI = appContext.getBean(UserUI.class);
-        userUI.run();
+        Parser parser = appContext.getBean(Parser.class);
+        parser.run();
     }
 
 }

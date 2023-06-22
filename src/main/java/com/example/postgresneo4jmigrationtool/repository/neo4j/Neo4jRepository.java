@@ -6,8 +6,6 @@ import java.util.Map;
 
 public interface Neo4jRepository {
 
-    String getDatabaseName();
-
     void addNode(Node node, String... labels);
 
     void addRelationship(Object fromNodeId, Object toNodeId, Map<String, Object> data, String label);
