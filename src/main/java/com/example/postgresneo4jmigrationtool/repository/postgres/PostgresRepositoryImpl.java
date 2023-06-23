@@ -6,7 +6,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Repository
@@ -37,8 +36,8 @@ public class PostgresRepositoryImpl implements PostgresRepository {
     @Override
     public String getDatabaseName() {
         int beginIndex = datasourceURL.lastIndexOf('/') + 1;
-        int endInder = datasourceURL.indexOf('?');
-        return datasourceURL.substring(beginIndex, endInder);
+        int endIndex = datasourceURL.indexOf('?');
+        return datasourceURL.substring(beginIndex, endIndex);
     }
 
     @Override
@@ -56,18 +55,35 @@ public class PostgresRepositoryImpl implements PostgresRepository {
                 AND table_name   = '%s';
                 """;
         String formattedQuery = String.format(query, getSchemaName(), tableName);
-        List<Map<String, String>> resultList = jdbcTemplate.query(formattedQuery, (rs, rowNum) -> {
+        Map<String, String> columnsInfo = new HashMap<>();
+        jdbcTemplate.query(formattedQuery, (rs, rowNum) -> {
             String columnName = rs.getString("column_name");
             String columnType = rs.getString("data_type");
-            Map<String, String> map = new HashMap<>();
-            map.put(columnName, columnType);
-            return map;
+            columnsInfo.put(columnName, columnType);
+            return columnsInfo;
         });
-        Map<String, String> columnsInfo = new HashMap<>();
-        for (Map<String, String> map : resultList) {
-            columnsInfo.putAll(map);
-        }
         return columnsInfo;
+    }
+
+    @Override
+    public String getForeignColumnName(String tableName, String columnName) {
+        String query = """
+                SELECT ccu.column_name AS column_name
+                FROM information_schema.table_constraints AS tc
+                JOIN information_schema.key_column_usage AS kcu
+                ON tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema = kcu.table_schema
+                JOIN information_schema.constraint_column_usage AS ccu
+                ON ccu.constraint_name = tc.constraint_name
+                AND ccu.table_schema = tc.table_schema
+                WHERE tc.constraint_type = 'FOREIGN KEY'
+                AND tc.table_name = '%s'
+                AND kcu.column_name = '%s';
+                """;
+        String formattedQuery = String.format(query, tableName, columnName);
+        return jdbcTemplate.query(formattedQuery, (rs, rowNum) ->
+                        rs.getString("column_name"))
+                .get(0);
     }
 
 }

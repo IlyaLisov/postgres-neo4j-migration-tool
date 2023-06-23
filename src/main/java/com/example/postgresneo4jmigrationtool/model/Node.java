@@ -10,11 +10,11 @@ public class Node {
     private String[] names;
     private Object[] values;
 
-    public String getDataString() {
+    @Override
+    public String toString() {
         StringBuilder result = new StringBuilder("{");
         for (int i = 0; i < names.length; i++) {
             result.append(names[i]).append(": ");
-            //TODO handle multiple types
             if (values[i] instanceof String) {
                 result.append("\"");
                 result.append(values[i]);
