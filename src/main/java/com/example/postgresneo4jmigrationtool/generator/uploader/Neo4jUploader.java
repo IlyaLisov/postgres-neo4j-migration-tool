@@ -7,6 +7,8 @@ import java.io.InputStream;
 
 public interface Neo4jUploader {
 
-    UploadResult upload(InputStream inputStream, UploadParams params);
+    UploadResult uploadNode(InputStream inputStream, UploadParams params);
+
+    UploadResult uploadRelationship(InputStream inputStream, UploadParams params);
 
 }

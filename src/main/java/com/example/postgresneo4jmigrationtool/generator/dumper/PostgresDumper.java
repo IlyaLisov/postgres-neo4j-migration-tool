@@ -8,4 +8,6 @@ public interface PostgresDumper {
 
     DumpResult dump(String tableName, Map<String, String> columnsInfo);
 
+    DumpResult dumpWithForeignKeys(String tableName, String columnFrom, String columnTo);
+
 }

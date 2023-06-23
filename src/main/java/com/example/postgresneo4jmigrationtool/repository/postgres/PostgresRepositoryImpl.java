@@ -70,4 +70,25 @@ public class PostgresRepositoryImpl implements PostgresRepository {
         return columnsInfo;
     }
 
+    @Override
+    public String getForeignColumnName(String tableName, String columnName) {
+        String query = """
+                SELECT ccu.table_name  AS foreign_table_name,
+                       ccu.column_name AS foreign_column_name
+                FROM information_schema.table_constraints AS tc
+                         JOIN information_schema.key_column_usage AS kcu
+                              ON tc.constraint_name = kcu.constraint_name
+                                  AND tc.table_schema = kcu.table_schema
+                         JOIN information_schema.constraint_column_usage AS ccu
+                              ON ccu.constraint_name = tc.constraint_name
+                                  AND ccu.table_schema = tc.table_schema
+                WHERE tc.constraint_type = 'FOREIGN KEY'
+                  AND tc.table_name = '%s'
+                  AND kcu.column_name = '%s';
+                """;
+        String formattedQuery = String.format(query, tableName, columnName);
+        return jdbcTemplate.query(formattedQuery, (rs, rowNum) ->
+                        rs.getString("foreign_column_name"))
+                .get(0);
+    }
 }

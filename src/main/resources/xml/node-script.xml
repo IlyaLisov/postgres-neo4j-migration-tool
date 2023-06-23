@@ -17,6 +17,11 @@
                 <label>BaseEntity</label>
             </labels>
         </table>
-        <table name="tasks"/>
+        <table name="tasks">
+            <labels>
+                <label>Task</label>
+                <label>BaseEntity</label>
+            </labels>
+        </table>
     </tables>
 </migration>

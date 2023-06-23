@@ -30,6 +30,15 @@ public class XmlParser implements Parser {
     public void run() {
         XML root = xml.nodes("migration").get(0);
         MigrationType type = MigrationType.valueOf(root.xpath("//@type").get(0).toUpperCase());
+
+        if (type == MigrationType.NODE) {
+            parseNodeMigration(root);
+        } else if (type == MigrationType.RELATIONSHIP) {
+            parseRelationshipMigration(root);
+        }
+    }
+
+    private void parseNodeMigration(XML root) {
         List<XML> tables = root.nodes("tables").get(0).nodes("table");
         for (XML table : tables) {
             String tableName = table.node()
@@ -44,7 +53,7 @@ public class XmlParser implements Parser {
                 excludedColumns = getExcludedColumns(configuration);
                 renamedColumns = getRenamedColumns(configuration);
             }
-            List<XML> labelsTag = table.nodes("configuration");
+            List<XML> labelsTag = table.nodes("labels");
             List<String> labels = new ArrayList<>();
             if (!labelsTag.isEmpty()) {
                 labels = getLabels(labelsTag.get(0));
@@ -55,9 +64,33 @@ public class XmlParser implements Parser {
             uploadParams.add("newNames", renamedColumns);
             uploadParams.add("delimeter", dumpResult.get("delimeter"));
             uploadParams.add("labels", labels);
-            UploadResult uploadResult = neo4jUploader.upload((InputStream) dumpResult.get("inputStream"), uploadParams);
+            UploadResult uploadResult = neo4jUploader.uploadNode((InputStream) dumpResult.get("inputStream"), uploadParams);
             System.out.println("Table " + tableName + " successfully uploaded to Neo4j.");
             System.out.println("Loaded " + uploadResult.get("nodeCounter") + " nodes.\n");
+        }
+    }
+
+    private void parseRelationshipMigration(XML root) {
+        List<XML> tables = root.nodes("tables").get(0).nodes("table");
+        for (XML table : tables) {
+            String tableName = table.node()
+                    .getAttributes()
+                    .getNamedItem("name")
+                    .getNodeValue();
+            String columnFrom = getColumnFrom(table);
+            String columnTo = getColumnTo(table);
+            String labelFrom = getLabelFrom(table);
+            String labelTo = getLabelTo(table);
+            String type = getType(table);
+            DumpResult dumpResult = dumper.dumpWithForeignKeys(tableName, columnFrom, columnTo);
+            UploadParams uploadParams = new UploadParams();
+            uploadParams.add("delimeter", dumpResult.get("delimeter"));
+            uploadParams.add("type", type);
+            uploadParams.add("labelFrom", labelFrom);
+            uploadParams.add("labelTo", labelTo);
+            UploadResult uploadResult = neo4jUploader.uploadRelationship((InputStream) dumpResult.get("inputStream"), uploadParams);
+            System.out.println("Table " + tableName + " successfully uploaded to Neo4j.");
+            System.out.println("Loaded " + uploadResult.get("relationshipCounter") + " relationships.\n");
         }
     }
 
@@ -99,6 +132,49 @@ public class XmlParser implements Parser {
         return labels.nodes("label").stream()
                 .map(l -> l.xpath("text()").get(0))
                 .toList();
+    }
+
+    private String getType(XML table) {
+        return table.nodes("type")
+                .get(0)
+                .xpath("text()")
+                .get(0);
+    }
+
+    private String getColumnFrom(XML table) {
+        return table.nodes("configuration")
+                .get(0)
+                .nodes("columnFrom")
+                .get(0)
+                .xpath("text()")
+                .get(0);
+    }
+
+    private String getColumnTo(XML table) {
+        return table.nodes("configuration")
+                .get(0)
+                .nodes("columnTo")
+                .get(0)
+                .xpath("text()")
+                .get(0);
+    }
+
+    private String getLabelFrom(XML table) {
+        return table.nodes("configuration")
+                .get(0)
+                .nodes("labelFrom")
+                .get(0)
+                .xpath("text()")
+                .get(0);
+    }
+
+    private String getLabelTo(XML table) {
+        return table.nodes("configuration")
+                .get(0)
+                .nodes("labelTo")
+                .get(0)
+                .xpath("text()")
+                .get(0);
     }
 
 }
