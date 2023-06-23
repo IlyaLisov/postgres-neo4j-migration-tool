@@ -29,7 +29,13 @@ public class Neo4jRepositoryImpl implements Neo4jRepository {
     @Override
     @Transactional
     public void addRelationship(Relationship relationship, String type) {
-        String query = "MATCH(nodeFrom: %s {%s: '%s'}) MATCH(nodeTo: %s {%s: '%s'}) CREATE (nodeFrom)-[:%s]->(nodeTo)";
+        String query = "MATCH(nodeFrom %s {%s: '%s'}) MATCH(nodeTo %s {%s: '%s'}) CREATE (nodeFrom)-[:%s]->(nodeTo)";
+        if (!relationship.getLabelFrom().isEmpty()) {
+            relationship.setLabelFrom(": " + relationship.getLabelFrom());
+        }
+        if (!relationship.getLabelTo().isEmpty()) {
+            relationship.setLabelTo(": " + relationship.getLabelTo());
+        }
         String preparedQuery = String.format(query,
                 relationship.getLabelFrom(),
                 relationship.getNodeFrom().getNames()[0],

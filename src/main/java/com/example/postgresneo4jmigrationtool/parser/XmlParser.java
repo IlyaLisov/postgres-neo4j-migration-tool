@@ -69,7 +69,9 @@ public class XmlParser implements Parser {
     }
 
     private void parseRelationshipMigration(XML root) {
-        List<XML> tables = root.nodes("tables").get(0).nodes("table");
+        List<XML> tables = root.nodes("tables")
+                .get(0)
+                .nodes("table");
         for (XML table : tables) {
             String tableName = getTableName(table);
             String columnFrom = getConfigurationTagValue(table, "columnFrom");
@@ -144,12 +146,17 @@ public class XmlParser implements Parser {
     }
 
     private String getConfigurationTagValue(XML table, String tag) {
-        return table.nodes("configuration")
+        List<XML> tags = table.nodes("configuration")
                 .get(0)
-                .nodes(tag)
-                .get(0)
-                .xpath("text()")
-                .get(0);
+                .nodes(tag);
+        if (!tags.isEmpty()) {
+            return tags
+                    .get(0)
+                    .xpath("text()")
+                    .get(0);
+        } else {
+            return "";
+        }
     }
 
 }

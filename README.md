@@ -78,21 +78,26 @@ creation.
 2) `<tables>` - collection of tables to be migrated.
 3) `<table>` - table tag, defines table name in `name` attribute, its
    configuration and labels.
-4) `<configuration>` - configuration for columns.
-5) `<excludedColumns>` - columns to be excluded from migration. It means after
+4) `<configuration>` - (optional for `node` migration mode) configuration for
+   columns.
+5) `<excludedColumns>` - (optional) columns to be excluded from migration. It
+   means after
    migration in Neo4j no data from these columns will be stored.
 6) `<column>` - column tag, contains table name.
-7) `<renamedColumns>` - columns to be renamed during migration. It means data
+7) `<renamedColumns>` - (optional) columns to be renamed during migration. It
+   means data
    from column with `<previousName>`
    will be stored as `<newName>` property;
-8) `<labels>` - collection of labels to be added to Nodes.
+8) `<labels>` - (optional) collection of labels to be added to Nodes.
 9) `<label>` - label tag, defines its name.
 10) `<columnFrom>` - column with foreign key to entity table. Relationship will
     be started from Node from that table by this foreign key.
 11) `<columnTo>` - column with foreign key to entity table. Relationship will
     be ended with Node from that table by this foreign key.
-12) `<labelFrom>` - specifies label of start node to find it by foreign key.
-12) `<labelTo>` - specifies label of end node to find it by foreign key.
+12) `<labelFrom>` - (optional) specifies label of start node to find it by
+    foreign key.
+12) `<labelTo>` - (optional) specifies label of end node to find it by foreign
+    key.
 13) `<type>` - type of the relationship.
 
 ### NOTE
@@ -101,12 +106,16 @@ You can safely omit `<labels>` and / or `<configuration>` tags for node
 migration - then all
 columns will be migrated and no labels will be added to generated nodes.
 
-If you want to migrate relationships, you need to add labels to your migrated
-nodes. This restriction may be changed in the future.
+If you want to migrate relationships, you need to add labels to ensure type of
+nodes to be connected. You can omit this tag if you sure that all of your nodes
+have unique id.
 
 Note that at first we exclude columns and only after rename them. So if you will
 rename excluded columns, it was excluded and no columns with this name will be
 renamed.
+
+We recommend to provide all available fields to be sure that correct data will
+be saved to Neo4j.
 
 ### How it works?
 
@@ -117,6 +126,10 @@ After it, these files are read and uploaded to Neo4j.
 
 These migration files are not deleted after script execution. So you can see
 what data was dumped and uploaded to Neo4j.
+
+Relationship migration is provided by matching nodes with provided primary key.
+So if some of your nodes have similar id, relationship will be added to each of
+them. It can be avoided but providing `<labelFrom>` and `<labelTo>` tags.
 
 If no exceptions were thrown, you will see messages in logs with amount of
 created nodes.
