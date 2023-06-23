@@ -1,0 +1,70 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:element name="migration">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="tables" type="tablesType"/>
+            </xs:sequence>
+            <xs:attribute name="type" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="node"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="tablesType">
+        <xs:sequence>
+            <xs:element name="table" maxOccurs="unbounded"
+                        type="tableType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="tableType">
+        <xs:sequence>
+            <xs:element name="configuration" type="configurationType"
+                        minOccurs="0"/>
+            <xs:element name="labels" type="labelsType" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="configurationType">
+        <xs:sequence>
+            <xs:element name="excludedColumns" type="excludedColumnsType"
+                        minOccurs="0"/>
+            <xs:element name="renamedColumns" type="renamedColumnsType"
+                        minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="excludedColumnsType">
+        <xs:sequence>
+            <xs:element name="column" type="xs:string" minOccurs="0"
+                        maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="renamedColumnsType">
+        <xs:sequence>
+            <xs:element name="columns" type="columnsType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="columnsType">
+        <xs:sequence>
+            <xs:element name="previousName" type="xs:string"/>
+            <xs:element name="newName" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="labelsType">
+        <xs:sequence>
+            <xs:element name="label" type="xs:string" minOccurs="0"
+                        maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

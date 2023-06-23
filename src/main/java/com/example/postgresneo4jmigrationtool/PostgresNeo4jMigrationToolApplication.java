@@ -12,8 +12,12 @@ public class PostgresNeo4jMigrationToolApplication {
 
     public static void main(String[] args) {
         ConfigurableApplicationContext appContext = SpringApplication.run(PostgresNeo4jMigrationToolApplication.class, args);
-        Parser parser = appContext.getBean(Parser.class);
-        parser.parse();
+        try {
+            Parser parser = appContext.getBean(Parser.class);
+            parser.parse();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 
 }

@@ -4,6 +4,9 @@ import com.example.postgresneo4jmigrationtool.model.Node;
 import com.example.postgresneo4jmigrationtool.model.Relationship;
 import com.example.postgresneo4jmigrationtool.model.UploadParams;
 import com.example.postgresneo4jmigrationtool.model.UploadResult;
+import com.example.postgresneo4jmigrationtool.model.exception.InvalidConfigurationException;
+import com.example.postgresneo4jmigrationtool.model.exception.InvalidFieldException;
+import com.example.postgresneo4jmigrationtool.model.exception.MigrationException;
 import com.example.postgresneo4jmigrationtool.repository.neo4j.Neo4jRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,9 +28,20 @@ public class CSVNeo4jUploader implements Neo4jUploader {
         try (Scanner scanner = new Scanner(inputStream)) {
             String headers = scanner.nextLine();
             String[] columnNames = headers.split(String.valueOf(params.get("delimiter")));
+            if (columnNames.length == 0) {
+                throw new MigrationException("First row of dumped file must contain column names.");
+            }
             List<String> labels = (List<String>) params.get("labels");
             Map<String, String> newNames = (Map<String, String>) params.get("newNames");
+            for (String name : newNames.values()) {
+                if (name.contains(" ")) {
+                    throw new InvalidFieldException("Field name can not include spaces: " + name);
+                }
+            }
             for (int i = 0; i < columnNames.length; i++) {
+                if (columnNames[i].contains(" ")) {
+                    throw new InvalidFieldException("Field name can not include spaces: " + columnNames[i]);
+                }
                 if (newNames.containsKey(columnNames[i])) {
                     columnNames[i] = newNames.get(columnNames[i]);
                 }
@@ -51,7 +65,18 @@ public class CSVNeo4jUploader implements Neo4jUploader {
         try (Scanner scanner = new Scanner(inputStream)) {
             String headers = scanner.nextLine();
             String[] columnNames = headers.split(String.valueOf(params.get("delimiter")));
+            if (columnNames.length == 0) {
+                throw new MigrationException("First row of dumped file must contain column names.");
+            }
+            for (String name : columnNames) {
+                if (name.contains(" ")) {
+                    throw new InvalidFieldException("Field name can not include spaces: " + name);
+                }
+            }
             String type = (String) params.get("type");
+            if (type == null || type.isEmpty()) {
+                throw new InvalidConfigurationException("Relationship must have type.");
+            }
             String labelFrom = (String) params.get("labelFrom");
             String labelTo = (String) params.get("labelTo");
             int relationshipCounter = 0;

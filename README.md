@@ -27,6 +27,9 @@ Future features:
 Here is an example of XML configuration file for node and relationship
 migration.
 
+You can validate your schema with `node-schema.xsd`
+and `relationship-schema.xsd` schemas.
+
 ```
 <migration type="node">
     <tables>
