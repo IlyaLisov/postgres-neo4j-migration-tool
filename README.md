@@ -24,8 +24,8 @@ Future features:
 
 ### Markup example
 
-Here is an example of XML configuration file for node creation and relationship
-creation.
+Here is an example of XML configuration file for node and relationship
+migration.
 
 ```
 <migration type="node">
