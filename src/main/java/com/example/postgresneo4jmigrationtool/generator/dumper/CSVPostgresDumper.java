@@ -1,6 +1,7 @@
 package com.example.postgresneo4jmigrationtool.generator.dumper;
 
 import com.example.postgresneo4jmigrationtool.model.DumpResult;
+import com.example.postgresneo4jmigrationtool.model.exception.MigrationException;
 import com.example.postgresneo4jmigrationtool.repository.postgres.PostgresRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.Collection;
@@ -23,19 +25,19 @@ public class CSVPostgresDumper implements PostgresDumper {
     private final String delimiter = ";";
 
     @Override
-    public DumpResult dump(String tableName, Collection<String> columnsInfo) {
+    public DumpResult dump(String tableName, Collection<String> columnsToDump) {
         DumpResult dumpResult = new DumpResult();
         dumpResult.add("dumpDirectory", dumpDirectory);
         dumpResult.add("delimiter", delimiter);
         File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
         createFile(dumpScript);
-        String columns = String.join(",", columnsInfo);
+        String columns = String.join(",", columnsToDump);
         try (PrintWriter writer = new PrintWriter(dumpScript)) {
             writer.printf("psql -U %s -c \"COPY (SELECT %s FROM %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
                     postgresRepository.getUsername(), columns, tableName, delimiter,
                     postgresRepository.getDatabaseName(), tableName);
-        } catch (Exception e) {
-            throw new IllegalStateException("Exception during dumping: " + e.getMessage());
+        } catch (IOException e) {
+            throw new MigrationException("Exception during dumping: " + e.getMessage());
         }
         runScript(dumpScript);
         addInputStream(dumpResult, tableName);
@@ -53,10 +55,17 @@ public class CSVPostgresDumper implements PostgresDumper {
         String foreignColumnTo = postgresRepository.getForeignColumnName(tableName, columnTo);
         try (PrintWriter writer = new PrintWriter(dumpScript)) {
             writer.printf("psql -U %s -c \"COPY (SELECT %s as %s, %s as %s FROM %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
-                    postgresRepository.getUsername(), columnFrom, foreignColumnFrom, columnTo, foreignColumnTo, tableName, delimiter,
-                    postgresRepository.getDatabaseName(), tableName);
-        } catch (Exception e) {
-            throw new IllegalStateException("Exception during dumping: " + e.getMessage());
+                    postgresRepository.getUsername(),
+                    columnFrom,
+                    foreignColumnFrom,
+                    columnTo,
+                    foreignColumnTo,
+                    tableName,
+                    delimiter,
+                    postgresRepository.getDatabaseName(),
+                    tableName);
+        } catch (IOException e) {
+            throw new MigrationException("Exception during dumping: " + e.getMessage());
         }
         runScript(dumpScript);
         addInputStream(dumpResult, tableName);
@@ -64,8 +73,12 @@ public class CSVPostgresDumper implements PostgresDumper {
     }
 
     private void createFile(File file) {
-        if (!file.exists()) {
-            file.getParentFile().mkdirs();
+        try {
+            if (!file.exists()) {
+                file.getParentFile().mkdirs();
+            }
+        } catch (Exception e) {
+            throw new MigrationException("Exception during temp folder creation: " + e.getMessage());
         }
     }
 
@@ -78,7 +91,7 @@ public class CSVPostgresDumper implements PostgresDumper {
             Process process = processBuilder.start();
             process.waitFor();
         } catch (Exception e) {
-            throw new IllegalStateException("Exception during dumping: " + e.getMessage());
+            throw new MigrationException("Exception during dumping script running: " + e.getMessage());
         }
     }
 
@@ -87,7 +100,7 @@ public class CSVPostgresDumper implements PostgresDumper {
             InputStream inputStream = new FileInputStream(dumpDirectory + "/" + tableName + ".csv");
             dumpResult.add("inputStream", inputStream);
         } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new MigrationException("Migration script file was not found.");
         }
     }
 
