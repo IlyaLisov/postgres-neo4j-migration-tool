@@ -17,7 +17,7 @@ public class Neo4jRepositoryImpl implements Neo4jRepository {
     @Transactional
     public void addNode(Node node, String... labels) {
         String query = "CREATE (n %s)";
-        String data = node.getDataString();
+        String data = node.toString();
         String preparedQuery = String.format(query, data);
         if (labels.length > 0) {
             preparedQuery += " SET n :%s";

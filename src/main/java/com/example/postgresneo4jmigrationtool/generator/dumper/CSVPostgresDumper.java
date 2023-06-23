@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.Collection;
 import java.util.Map;
 
 @Service
@@ -19,43 +20,25 @@ public class CSVPostgresDumper implements PostgresDumper {
     private final PostgresRepository postgresRepository;
     private final String dumpDirectory = "dump";
     private final String dumpScriptFileName = "dump_script.sh";
-    private final String delimeter = ";";
+    private final String delimiter = ";";
 
     @Override
-    public DumpResult dump(String tableName, Map<String, String> columnsInfo) {
+    public DumpResult dump(String tableName, Collection<String> columnsInfo) {
         DumpResult dumpResult = new DumpResult();
         dumpResult.add("dumpDirectory", dumpDirectory);
-        dumpResult.add("delimeter", delimeter);
-
+        dumpResult.add("delimiter", delimiter);
         File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
         createFile(dumpScript);
-        String columns = String.join(",", columnsInfo.keySet());
+        String columns = String.join(",", columnsInfo);
         try (PrintWriter writer = new PrintWriter(dumpScript)) {
             writer.printf("psql -U %s -c \"COPY (SELECT %s FROM %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
-                    postgresRepository.getUsername(), columns, tableName, delimeter,
+                    postgresRepository.getUsername(), columns, tableName, delimiter,
                     postgresRepository.getDatabaseName(), tableName);
         } catch (Exception e) {
             throw new IllegalStateException("Exception during dumping: " + e.getMessage());
         }
-
-        try {
-            ProcessBuilder processBuilder = new ProcessBuilder("/bin/bash", dumpScript.getAbsolutePath());
-            Map<String, String> env = processBuilder.environment();
-            env.put("PGPASSWORD", postgresRepository.getPassword());
-            processBuilder.directory(new File(dumpScript.getParent()));
-            Process process = processBuilder.start();
-            process.waitFor();
-        } catch (Exception e) {
-            throw new IllegalStateException("Exception during dumping: " + e.getMessage());
-        }
-
-        try {
-            InputStream inputStream = new FileInputStream(dumpDirectory + "/" + tableName + ".csv");
-            dumpResult.add("inputStream", inputStream);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
+        runScript(dumpScript);
+        addInputStream(dumpResult, tableName);
         return dumpResult;
     }
 
@@ -63,20 +46,30 @@ public class CSVPostgresDumper implements PostgresDumper {
     public DumpResult dumpWithForeignKeys(String tableName, String columnFrom, String columnTo) {
         DumpResult dumpResult = new DumpResult();
         dumpResult.add("dumpDirectory", dumpDirectory);
-        dumpResult.add("delimeter", delimeter);
-
+        dumpResult.add("delimiter", delimiter);
         File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
         createFile(dumpScript);
         String foreignColumnFrom = postgresRepository.getForeignColumnName(tableName, columnFrom);
         String foreignColumnTo = postgresRepository.getForeignColumnName(tableName, columnTo);
         try (PrintWriter writer = new PrintWriter(dumpScript)) {
             writer.printf("psql -U %s -c \"COPY (SELECT %s as %s, %s as %s FROM %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
-                    postgresRepository.getUsername(), columnFrom, foreignColumnFrom, columnTo, foreignColumnTo, tableName, delimeter,
+                    postgresRepository.getUsername(), columnFrom, foreignColumnFrom, columnTo, foreignColumnTo, tableName, delimiter,
                     postgresRepository.getDatabaseName(), tableName);
         } catch (Exception e) {
             throw new IllegalStateException("Exception during dumping: " + e.getMessage());
         }
+        runScript(dumpScript);
+        addInputStream(dumpResult, tableName);
+        return dumpResult;
+    }
 
+    private void createFile(File file) {
+        if (!file.exists()) {
+            file.getParentFile().mkdirs();
+        }
+    }
+
+    private void runScript(File dumpScript) {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder("/bin/bash", dumpScript.getAbsolutePath());
             Map<String, String> env = processBuilder.environment();
@@ -87,20 +80,14 @@ public class CSVPostgresDumper implements PostgresDumper {
         } catch (Exception e) {
             throw new IllegalStateException("Exception during dumping: " + e.getMessage());
         }
+    }
 
+    private void addInputStream(DumpResult dumpResult, String tableName) {
         try {
             InputStream inputStream = new FileInputStream(dumpDirectory + "/" + tableName + ".csv");
             dumpResult.add("inputStream", inputStream);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
-        }
-
-        return dumpResult;
-    }
-
-    private void createFile(File file) {
-        if (!file.exists()) {
-            file.getParentFile().mkdirs();
         }
     }
 

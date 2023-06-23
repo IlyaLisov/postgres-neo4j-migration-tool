@@ -27,10 +27,9 @@ public class XmlParser implements Parser {
     private final XML xml;
 
     @Override
-    public void run() {
+    public void parse() {
         XML root = xml.nodes("migration").get(0);
-        MigrationType type = MigrationType.valueOf(root.xpath("//@type").get(0).toUpperCase());
-
+        MigrationType type = MigrationType.valueOf(root.xpath("@type").get(0).toUpperCase());
         if (type == MigrationType.NODE) {
             parseNodeMigration(root);
         } else if (type == MigrationType.RELATIONSHIP) {
@@ -39,12 +38,11 @@ public class XmlParser implements Parser {
     }
 
     private void parseNodeMigration(XML root) {
-        List<XML> tables = root.nodes("tables").get(0).nodes("table");
+        List<XML> tables = root.nodes("tables")
+                .get(0)
+                .nodes("table");
         for (XML table : tables) {
-            String tableName = table.node()
-                    .getAttributes()
-                    .getNamedItem("name")
-                    .getNodeValue();
+            String tableName = getTableName(table);
             List<XML> configurationTag = table.nodes("configuration");
             List<String> excludedColumns = new ArrayList<>();
             Map<String, String> renamedColumns = new HashMap<>();
@@ -59,39 +57,40 @@ public class XmlParser implements Parser {
                 labels = getLabels(labelsTag.get(0));
             }
             Map<String, String> tablesToDump = getTables(tableName, excludedColumns);
-            DumpResult dumpResult = dumper.dump(tableName, tablesToDump);
+            DumpResult dumpResult = dumper.dump(tableName, tablesToDump.keySet());
             UploadParams uploadParams = new UploadParams();
             uploadParams.add("newNames", renamedColumns);
-            uploadParams.add("delimeter", dumpResult.get("delimeter"));
+            uploadParams.add("delimiter", dumpResult.get("delimiter"));
             uploadParams.add("labels", labels);
-            UploadResult uploadResult = neo4jUploader.uploadNode((InputStream) dumpResult.get("inputStream"), uploadParams);
+            UploadResult uploadResult = neo4jUploader.createNode((InputStream) dumpResult.get("inputStream"), uploadParams);
             System.out.println("Table " + tableName + " successfully uploaded to Neo4j.");
-            System.out.println("Loaded " + uploadResult.get("nodeCounter") + " nodes.\n");
+            System.out.println("Created " + uploadResult.get("nodeCounter") + " nodes.\n");
         }
     }
 
     private void parseRelationshipMigration(XML root) {
         List<XML> tables = root.nodes("tables").get(0).nodes("table");
         for (XML table : tables) {
-            String tableName = table.node()
-                    .getAttributes()
-                    .getNamedItem("name")
-                    .getNodeValue();
-            String columnFrom = getColumnFrom(table);
-            String columnTo = getColumnTo(table);
-            String labelFrom = getLabelFrom(table);
-            String labelTo = getLabelTo(table);
+            String tableName = getTableName(table);
+            String columnFrom = getConfigurationTagValue(table, "columnFrom");
+            String columnTo = getConfigurationTagValue(table, "columnTo");
+            String labelFrom = getConfigurationTagValue(table, "labelFrom");
+            String labelTo = getConfigurationTagValue(table, "labelTo");
             String type = getType(table);
             DumpResult dumpResult = dumper.dumpWithForeignKeys(tableName, columnFrom, columnTo);
             UploadParams uploadParams = new UploadParams();
-            uploadParams.add("delimeter", dumpResult.get("delimeter"));
+            uploadParams.add("delimiter", dumpResult.get("delimiter"));
             uploadParams.add("type", type);
             uploadParams.add("labelFrom", labelFrom);
             uploadParams.add("labelTo", labelTo);
-            UploadResult uploadResult = neo4jUploader.uploadRelationship((InputStream) dumpResult.get("inputStream"), uploadParams);
+            UploadResult uploadResult = neo4jUploader.createRelationship((InputStream) dumpResult.get("inputStream"), uploadParams);
             System.out.println("Table " + tableName + " successfully uploaded to Neo4j.");
-            System.out.println("Loaded " + uploadResult.get("relationshipCounter") + " relationships.\n");
+            System.out.println("Created " + uploadResult.get("relationshipCounter") + " relationships.\n");
         }
+    }
+
+    private String getTableName(XML table) {
+        return table.xpath("@name").get(0);
     }
 
     private List<String> getExcludedColumns(XML configuration) {
@@ -104,15 +103,18 @@ public class XmlParser implements Parser {
     private Map<String, String> getRenamedColumns(XML configuration) {
         XML renameColumns = configuration.nodes("renamedColumns").get(0);
         List<XML> columns = renameColumns.nodes("columns");
-
         List<String> previousNames = columns.stream()
-                .map(c -> c.nodes("previousName").get(0).xpath("text()").get(0))
+                .map(c -> c.nodes("previousName")
+                        .get(0)
+                        .xpath("text()")
+                        .get(0))
                 .toList();
-
         List<String> newNames = columns.stream()
-                .map(c -> c.nodes("newName").get(0).xpath("text()").get(0))
+                .map(c -> c.nodes("newName")
+                        .get(0)
+                        .xpath("text()")
+                        .get(0))
                 .toList();
-
         Map<String, String> renamedColumns = new HashMap<>();
         for (int i = 0; i < previousNames.size(); i++) {
             renamedColumns.put(previousNames.get(i), newNames.get(i));
@@ -141,37 +143,10 @@ public class XmlParser implements Parser {
                 .get(0);
     }
 
-    private String getColumnFrom(XML table) {
+    private String getConfigurationTagValue(XML table, String tag) {
         return table.nodes("configuration")
                 .get(0)
-                .nodes("columnFrom")
-                .get(0)
-                .xpath("text()")
-                .get(0);
-    }
-
-    private String getColumnTo(XML table) {
-        return table.nodes("configuration")
-                .get(0)
-                .nodes("columnTo")
-                .get(0)
-                .xpath("text()")
-                .get(0);
-    }
-
-    private String getLabelFrom(XML table) {
-        return table.nodes("configuration")
-                .get(0)
-                .nodes("labelFrom")
-                .get(0)
-                .xpath("text()")
-                .get(0);
-    }
-
-    private String getLabelTo(XML table) {
-        return table.nodes("configuration")
-                .get(0)
-                .nodes("labelTo")
+                .nodes(tag)
                 .get(0)
                 .xpath("text()")
                 .get(0);
