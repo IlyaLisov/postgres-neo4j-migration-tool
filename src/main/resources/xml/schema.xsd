@@ -39,6 +39,7 @@
                         minOccurs="0"/>
             <xs:element name="renamedColumns" type="renamedColumnsType"
                         minOccurs="0"/>
+            <xs:element name="timeFormat" type="xs:string" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 
