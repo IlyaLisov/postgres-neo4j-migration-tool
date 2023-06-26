@@ -27,81 +27,84 @@ Future features:
 Here is an example of XML configuration file for node and relationship
 migration.
 
-You can validate your schema with `node-schema.xsd`
-and `relationship-schema.xsd` schemas.
+You can validate your schema with `schema.xsd`schema.
 
 ```
-<migration type="node">
-    <tables>
-        <table name="users">
-            <configuration>
-                <excludedColumns>
-                    <column>surname</column>
-                </excludedColumns>
-                <renamedColumns>
-                    <columns>
-                        <previousName>name</previousName>
-                        <newName>newName</newName>
-                    </columns>
-                </renamedColumns>
-            </configuration>
-            <labels>
-                <label>User</label>
-                <label>BaseEntity</label>
-            </labels>
-        </table>
-        <table name="tasks">
-            <labels>
-                <label>Task</label>
-                <label>BaseEntity</label>
-            </labels>
-        </table>
-    </tables>
+<migration>
+    <node>
+        <tables>
+            <table name="users">
+                <configuration>
+                    <excludedColumns>
+                        <column>surname</column>
+                    </excludedColumns>
+                    <renamedColumns>
+                        <columns>
+                            <previousName>name</previousName>
+                            <newName>newName</newName>
+                        </columns>
+                    </renamedColumns>
+                </configuration>
+                <labels>
+                    <label>User</label>
+                    <label>BaseEntity</label>
+                </labels>
+            </table>
+            <table name="tasks">
+                <labels>
+                    <label>Task</label>
+                    <label>BaseEntity</label>
+                </labels>
+            </table>
+        </tables>
+    </node>
+    <relationship>
+        <tables>
+            <table name="users_tasks">
+                <configuration>
+                    <columnFrom>user_id</columnFrom>
+                    <labelFrom>User</labelFrom>
+                    <columnTo>task_id</columnTo>
+                    <labelTo>Task</labelTo>
+                </configuration>
+                <type>HAS_TASK</type>
+            </table>
+        </tables>
+    </relationship>
 </migration>
 ```
 
-```
-<migration type="relationship">
-    <tables>
-        <table name="users_tasks">
-            <configuration>
-                <columnFrom>user_id</columnFrom>
-                <labelFrom>User</labelFrom>
-                <columnTo>task_id</columnTo>
-                <labelTo>Task</labelTo>
-            </configuration>
-            <type>HAS_TASK</label>
-        </table>
-    </tables>
-</migration>
-```
-
-1) `<migration>` - main tag, defines whether Node or Relationship is going to be
-   created. You need to provide `type` attribute - `node` or `relationship`.
-2) `<tables>` - collection of tables to be migrated.
-3) `<table>` - table tag, defines table name in `name` attribute, its
+1) `<migration>` - main tag, contains what Node or/and Relationship is going to
+   be created.
+2) `<node>` - (optional) node migration description tag.
+3) `<relationship>` - (optional) relationship migration description tag.
+4) `<tables>` - collection of tables to be migrated.
+5) `<table>` - table tag, defines table name in `name` attribute, its
    configuration and labels.
-4) `<configuration>` - (optional for `node` migration mode) configuration for
+6) `<configuration>` - (optional for `node` migration) configuration for
    columns.
-5) `<excludedColumns>` - (optional) columns to be excluded from migration. It
-   means after
-   migration in Neo4j no data from these columns will be stored.
-6) `<column>` - column tag, contains table name.
-7) `<renamedColumns>` - (optional) columns to be renamed during migration. It
-   means data
-   from column with `<previousName>`
+7) `<excludedColumns>` - (optional for `node` migration) columns to be excluded
+   from migration. It
+   means after migration in Neo4j no data from these columns will be stored.
+8) `<column>` - column tag, contains table name.
+9) `<renamedColumns>` - (optional for `node` migration) columns to be renamed
+   during migration. It means data from column with `<previousName>`
    will be stored as `<newName>` property;
-8) `<labels>` - (optional) collection of labels to be added to Nodes.
-9) `<label>` - label tag, defines its name.
-10) `<columnFrom>` - column with foreign key to entity table. Relationship will
+10) `<labels>` - (optional for `node` migration) collection of labels to be
+    added
+    to Nodes.
+11) `<label>` - label tag, defines its name.
+12) `<columnFrom>` - column with foreign key to entity table. Relationship will
     be started from Node from that table by this foreign key.
-11) `<columnTo>` - column with foreign key to entity table. Relationship will
+13) `<columnTo>` - column with foreign key to entity table. Relationship will
     be ended with Node from that table by this foreign key.
-12) `<labelFrom>` - (optional) specifies label of start node to find it by
+14) `<labelFrom>` - (optional for `migration` mode) specifies label of start
+    node to find it by
     foreign key.
-12) `<labelTo>` - (optional) specifies label of end node to find it by foreign
+15) `<labelTo>` - (optional for `migration` mode) specifies label of end node to
+    find it by foreign
     key.
-13) `<type>` - type of the relationship.
+16) `<type>` - type of the relationship.
 
 ### NOTE
 
@@ -117,7 +120,7 @@ Note that at first we exclude columns and only after rename them. So if you will
 rename excluded columns, it was excluded and no columns with this name will be
 renamed.
 
-We recommend to provide all available fields to be sure that correct data will
+We recommend to fill up all tags to be sure that correct data will
 be saved to Neo4j.
 
 ### How it works?
@@ -135,4 +138,4 @@ So if some of your nodes have similar id, relationship will be added to each of
 them. It can be avoided but providing `<labelFrom>` and `<labelTo>` tags.
 
 If no exceptions were thrown, you will see messages in logs with amount of
-created nodes.
+created nodes and relationships.
