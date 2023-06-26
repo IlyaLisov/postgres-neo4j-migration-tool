@@ -33,24 +33,32 @@ public class XmlParser implements Parser {
     public void parse() {
         XML root = xml.nodes("migration").get(0);
         try {
-            MigrationType type = MigrationType.valueOf(root.xpath("@type").get(0).toUpperCase());
-            List<XML> tablesTag = root.nodes("tables");
-            if (tablesTag.isEmpty()) {
-                throw new InvalidConfigurationException("You must provide <tables> tag.");
-            }
-            List<XML> tables = tablesTag.get(0)
-                    .nodes("table");
-            if (tables.isEmpty()) {
-                throw new InvalidConfigurationException("You must provide at least one <table> tag.");
-            }
-            if (type == MigrationType.NODE) {
+            List<XML> nodeMigration = root.nodes("node");
+            List<XML> relationshipMigration = root.nodes("relationship");
+            if (!nodeMigration.isEmpty()) {
+                List<XML> tables = getXMLTables(nodeMigration.get(0));
                 parseNodeMigration(tables);
-            } else if (type == MigrationType.RELATIONSHIP) {
+            }
+            if (!relationshipMigration.isEmpty()) {
+                List<XML> tables = getXMLTables(relationshipMigration.get(0));
                 parseRelationshipMigration(tables);
             }
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException("Unsupported migration type. Supported are: " + Arrays.stream(MigrationType.values()).map(s -> s.name().toLowerCase()).toList());
         }
+    }
+
+    private List<XML> getXMLTables(XML root) {
+        List<XML> tablesTag = root.nodes("tables");
+        if (tablesTag.isEmpty()) {
+            throw new InvalidConfigurationException("You must provide <tables> tag.");
+        }
+        List<XML> tables = tablesTag.get(0)
+                .nodes("table");
+        if (tables.isEmpty()) {
+            throw new InvalidConfigurationException("You must provide at least one <table> tag.");
+        }
+        return tables;
     }
 
     private void parseNodeMigration(List<XML> tables) {
