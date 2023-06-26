@@ -14,6 +14,8 @@ public interface PostgresRepository {
 
     Map<String, String> getColumnsInfo(String tableName);
 
+    String getColumnType(String tableName, String column);
+
     String getForeignColumnName(String tableName, String columnName);
 
 }

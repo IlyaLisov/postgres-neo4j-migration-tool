@@ -5,7 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Repository
@@ -55,7 +56,7 @@ public class PostgresRepositoryImpl implements PostgresRepository {
                 AND table_name   = '%s';
                 """;
         String formattedQuery = String.format(query, getSchemaName(), tableName);
-        Map<String, String> columnsInfo = new HashMap<>();
+        Map<String, String> columnsInfo = new LinkedHashMap<>();
         jdbcTemplate.query(formattedQuery, (rs, rowNum) -> {
             String columnName = rs.getString("column_name");
             String columnType = rs.getString("data_type");
@@ -63,6 +64,21 @@ public class PostgresRepositoryImpl implements PostgresRepository {
             return columnsInfo;
         });
         return columnsInfo;
+    }
+
+    @Override
+    public String getColumnType(String tableName, String column) {
+        String query = """
+                SELECT data_type
+                FROM information_schema.columns
+                WHERE table_schema = '%s'
+                AND table_name   = '%s'
+                AND column_name = '%s';
+                """;
+        String formattedQuery = String.format(query, getSchemaName(), tableName, column);
+        List<String> type = jdbcTemplate.query(formattedQuery, (rs, rowNum) ->
+                rs.getString("data_type"));
+        return type.get(0);
     }
 
     @Override

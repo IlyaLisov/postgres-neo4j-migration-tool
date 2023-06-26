@@ -11,10 +11,7 @@ User can:
 - rename columns
 - add labels to generated nodes
 - migrate relationships by migrating foreign keys
-
-Future features:
-
-- time and boolean formatting
+- reformat timestamp to time format
 
 ### How to use?
 
@@ -44,6 +41,7 @@ You can validate your schema with `schema.xsd`schema.
                             <newName>newName</newName>
                         </columns>
                     </renamedColumns>
+                    <timeFormat>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timeFormat>
                 </configuration>
                 <labels>
                     <label>User</label>
@@ -90,21 +88,26 @@ You can validate your schema with `schema.xsd`schema.
 9) `<renamedColumns>` - (optional for `node` migration) columns to be renamed
    during migration. It means data from column with `<previousName>`
    will be stored as `<newName>` property;
-10) `<labels>` - (optional for `node` migration) collection of labels to be
+10) `<timeFormat>` - (optional for `node` migration) format of timestamp to
+    store in Neo4j. It is needed to store LocalDateTime and access it without
+    converters in code.
+11) `<labels>` - (optional for `node` migration) collection of labels to be
     added
     to Nodes.
-11) `<label>` - label tag, defines its name.
-12) `<columnFrom>` - column with foreign key to entity table. Relationship will
+12) `<label>` - label tag, defines its name.
+13) `<columnFrom>` - column with foreign key to entity table. Relationship will
     be started from Node from that table by this foreign key.
-13) `<columnTo>` - column with foreign key to entity table. Relationship will
+14) `<columnTo>` - column with foreign key to entity table. Relationship will
     be ended with Node from that table by this foreign key.
-14) `<labelFrom>` - (optional for `migration` mode) specifies label of start
+15) `<labelFrom>` - (optional for `migration` migration) specifies label of
+    start
     node to find it by
     foreign key.
-15) `<labelTo>` - (optional for `migration` mode) specifies label of end node to
+16) `<labelTo>` - (optional for `migration` migration) specifies label of end
+    node to
     find it by foreign
     key.
-16) `<type>` - type of the relationship.
+17) `<type>` - type of the relationship.
 
 ### NOTE
 
@@ -119,6 +122,13 @@ have unique id.
 Note that at first we exclude columns and only after rename them. So if you will
 rename excluded columns, it was excluded and no columns with this name will be
 renamed.
+
+We handle Postgres types in generated JSON the following way:
+
+- `integer`, `bigserial`, `biginteger` are considered numeric values
+- `bool`, `boolean` are considered boolean values
+- `timestamp`, `timestamp without time zone` as timestamp
+- other types - strings.
 
 We recommend to fill up all tags to be sure that correct data will
 be saved to Neo4j.
@@ -136,6 +146,9 @@ what data was dumped and uploaded to Neo4j.
 Relationship migration is provided by matching nodes with provided primary key.
 So if some of your nodes have similar id, relationship will be added to each of
 them. It can be avoided but providing `<labelFrom>` and `<labelTo>` tags.
+
+We parse timestamp from database then format it to provided time format (
+from optional `<timeFormat>` tag).
 
 If no exceptions were thrown, you will see messages in logs with amount of
 created nodes and relationships.

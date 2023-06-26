@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -33,6 +34,8 @@ public class CSVNeo4jUploader implements Neo4jUploader {
             }
             List<String> labels = (List<String>) params.get("labels");
             Map<String, String> newNames = (Map<String, String>) params.get("newNames");
+            Collection<String> types = (Collection<String>) params.get("types");
+            String timeFormat = (String) params.get("timeFormat");
             for (String name : newNames.values()) {
                 if (name.contains(" ")) {
                     throw new InvalidFieldException("Field name can not include spaces: " + name);
@@ -50,7 +53,8 @@ public class CSVNeo4jUploader implements Neo4jUploader {
             while (scanner.hasNextLine()) {
                 String data = scanner.nextLine();
                 String[] values = data.split(String.valueOf(params.get("delimiter")));
-                Node node = new Node(columnNames, values);
+                Node node = new Node(columnNames, values, types.toArray(new String[0]));
+                node.setTimeFormat(timeFormat);
                 neo4jRepository.addNode(node, labels.toArray(new String[0]));
                 nodeCounter++;
             }
@@ -65,6 +69,8 @@ public class CSVNeo4jUploader implements Neo4jUploader {
         try (Scanner scanner = new Scanner(inputStream)) {
             String headers = scanner.nextLine();
             String[] columnNames = headers.split(String.valueOf(params.get("delimiter")));
+            String columnFromType = (String) params.get("columnFromType");
+            String columnToType = (String) params.get("columnToType");
             if (columnNames.length == 0) {
                 throw new MigrationException("First row of dumped file must contain column names.");
             }
@@ -83,8 +89,8 @@ public class CSVNeo4jUploader implements Neo4jUploader {
             while (scanner.hasNextLine()) {
                 String data = scanner.nextLine();
                 String[] values = data.split(String.valueOf(params.get("delimiter")));
-                Node nodeFrom = new Node(new String[]{columnNames[0]}, new String[]{values[0]});
-                Node nodeTo = new Node(new String[]{columnNames[1]}, new String[]{values[1]});
+                Node nodeFrom = new Node(new String[]{columnNames[0]}, new String[]{values[0]}, new String[]{columnFromType});
+                Node nodeTo = new Node(new String[]{columnNames[1]}, new String[]{values[1]}, new String[]{columnToType});
                 Relationship relationship = new Relationship(nodeFrom, nodeTo, labelFrom, labelTo);
                 neo4jRepository.addRelationship(relationship, type);
                 relationshipCounter++;

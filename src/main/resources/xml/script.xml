@@ -12,6 +12,7 @@
                             <newName>newName</newName>
                         </columns>
                     </renamedColumns>
+                    <timeFormat>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timeFormat>
                 </configuration>
                 <labels>
                     <label>User</label>

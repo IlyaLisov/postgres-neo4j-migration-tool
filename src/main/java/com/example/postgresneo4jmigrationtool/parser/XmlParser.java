@@ -15,7 +15,7 @@ import org.w3c.dom.Node;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,19 +66,23 @@ public class XmlParser implements Parser {
             String tableName = getTableName(table);
             List<XML> configurationTag = table.nodes("configuration");
             List<String> excludedColumns = new ArrayList<>();
-            Map<String, String> renamedColumns = new HashMap<>();
+            Map<String, String> renamedColumns = new LinkedHashMap<>();
+            String timeFormat = "";
             if (!configurationTag.isEmpty()) {
                 XML configuration = configurationTag.get(0);
                 excludedColumns = getExcludedColumns(configuration);
                 renamedColumns = getRenamedColumns(configuration);
+                timeFormat = getConfigurationTagValue(table, "timeFormat");
             }
             List<String> labels = getLabels(table);
-            Map<String, String> tablesToDump = getTables(tableName, excludedColumns);
+            Map<String, String> tablesToDump = getColumns(tableName, excludedColumns);
             DumpResult dumpResult = dumper.dump(tableName, tablesToDump.keySet());
             UploadParams uploadParams = new UploadParams();
             uploadParams.add("newNames", renamedColumns);
             uploadParams.add("delimiter", dumpResult.get("delimiter"));
             uploadParams.add("labels", labels);
+            uploadParams.add("types", tablesToDump.values());
+            uploadParams.add("timeFormat", timeFormat);
             UploadResult uploadResult = neo4jUploader.createNode((InputStream) dumpResult.get("inputStream"), uploadParams);
             System.out.println("Table " + tableName + " successfully uploaded to Neo4j.");
             System.out.println("Created " + uploadResult.get("nodeCounter") + " nodes.\n");
@@ -93,12 +97,16 @@ public class XmlParser implements Parser {
             String labelFrom = getConfigurationTagValue(table, "labelFrom");
             String labelTo = getConfigurationTagValue(table, "labelTo");
             String type = getType(table);
+            String columnFromType = postgresRepository.getColumnType(tableName, columnFrom);
+            String columnToType = postgresRepository.getColumnType(tableName, columnFrom);
             DumpResult dumpResult = dumper.dumpWithForeignKeys(tableName, columnFrom, columnTo);
             UploadParams uploadParams = new UploadParams();
             uploadParams.add("delimiter", dumpResult.get("delimiter"));
             uploadParams.add("type", type);
             uploadParams.add("labelFrom", labelFrom);
             uploadParams.add("labelTo", labelTo);
+            uploadParams.add("columnFromType", columnFromType);
+            uploadParams.add("columnToType", columnToType);
             UploadResult uploadResult = neo4jUploader.createRelationship((InputStream) dumpResult.get("inputStream"), uploadParams);
             System.out.println("Table " + tableName + " successfully uploaded to Neo4j.");
             System.out.println("Created " + uploadResult.get("relationshipCounter") + " relationships.\n");
@@ -144,16 +152,16 @@ public class XmlParser implements Parser {
             if (previousNames.size() != newNames.size()) {
                 throw new InvalidConfigurationException("Amount of <previousName> and <newName> tags must be the same.");
             }
-            Map<String, String> renamedColumnsMap = new HashMap<>();
+            Map<String, String> renamedColumnsMap = new LinkedHashMap<>();
             for (int i = 0; i < previousNames.size(); i++) {
                 renamedColumnsMap.put(previousNames.get(i), newNames.get(i));
             }
             return renamedColumnsMap;
         }
-        return new HashMap<>();
+        return new LinkedHashMap<>();
     }
 
-    private Map<String, String> getTables(String tableName, List<String> excludedColumns) {
+    private Map<String, String> getColumns(String tableName, List<String> excludedColumns) {
         Map<String, String> tables = postgresRepository.getColumnsInfo(tableName);
         for (String name : excludedColumns) {
             tables.remove(name);
