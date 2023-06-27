@@ -10,7 +10,6 @@ import com.example.postgresneo4jmigrationtool.repository.postgres.PostgresReposi
 import com.jcabi.xml.XML;
 import lombok.Data;
 import org.springframework.stereotype.Service;
-import org.w3c.dom.Node;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -18,9 +17,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service(value = "nodeParser")
+@Service(value = "nodeXmlParser")
 @Data
-public class NodeParser implements Parser {
+public class NodeXmlParser implements Parser {
 
     private final PostgresRepository postgresRepository;
     private final PostgresDumper dumper;
@@ -31,7 +30,7 @@ public class NodeParser implements Parser {
     @Override
     public void parse() {
         for (XML table : tables) {
-            String tableName = getTableName(table);
+            String tableName = new TextXpath(table).getAttribute("name");
             List<XML> configurationTag = table.nodes("configuration");
             List<String> excludedColumns = new ArrayList<>();
             Map<String, String> renamedColumns = new LinkedHashMap<>();
@@ -40,14 +39,13 @@ public class NodeParser implements Parser {
                 XML configuration = configurationTag.get(0);
                 excludedColumns = getExcludedColumns(configuration);
                 renamedColumns = getRenamedColumns(configuration);
-                timeFormat = getConfigurationTagValue(table, "timeFormat");
+                timeFormat = new TextXpath(table).getInnerValue("configuration", "timeFormat");
             }
             List<String> labels = getLabels(table);
             Map<String, String> tablesToDump = getColumns(tableName, excludedColumns);
             DumpResult dumpResult = dumper.dump(tableName, tablesToDump.keySet());
             UploadParams uploadParams = new UploadParams();
             uploadParams.add("newNames", renamedColumns);
-            uploadParams.add("delimiter", dumpResult.get("delimiter"));
             uploadParams.add("labels", labels);
             uploadParams.add("types", tablesToDump.values());
             uploadParams.add("timeFormat", timeFormat);
@@ -55,14 +53,6 @@ public class NodeParser implements Parser {
             System.out.println("Table " + tableName + " successfully uploaded to Neo4j.");
             System.out.println("Created " + uploadResult.get("nodeCounter") + " nodes.\n");
         }
-    }
-
-    private String getTableName(XML table) {
-        Node name = table.node().getAttributes().getNamedItem("name");
-        if (name == null) {
-            throw new InvalidConfigurationException("Table must contain name attribute.");
-        }
-        return name.getNodeValue();
     }
 
     private List<String> getExcludedColumns(XML configuration) {
@@ -123,20 +113,6 @@ public class NodeParser implements Parser {
                     .toList();
         }
         return new ArrayList<>();
-    }
-
-    private String getConfigurationTagValue(XML table, String tag) {
-        List<XML> tags = table.nodes("configuration")
-                .get(0)
-                .nodes(tag);
-        if (!tags.isEmpty()) {
-            return tags
-                    .get(0)
-                    .xpath("text()")
-                    .get(0);
-        } else {
-            return "";
-        }
     }
 
 }

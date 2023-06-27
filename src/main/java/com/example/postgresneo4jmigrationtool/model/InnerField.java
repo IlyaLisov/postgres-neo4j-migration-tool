@@ -9,8 +9,7 @@ import java.util.List;
 @AllArgsConstructor
 public class InnerField {
 
-    private Node node;
-    private String label;
+    private Node source;
     private String fieldName;
     private String valueType;
     private List<Object> values;

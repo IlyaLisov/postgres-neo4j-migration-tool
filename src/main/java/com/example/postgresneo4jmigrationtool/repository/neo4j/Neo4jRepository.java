@@ -6,7 +6,7 @@ import com.example.postgresneo4jmigrationtool.model.Relationship;
 
 public interface Neo4jRepository {
 
-    void addNode(Node node, String... labels);
+    void addNode(Node node);
 
     void addRelationship(Relationship relationship, String type);
 

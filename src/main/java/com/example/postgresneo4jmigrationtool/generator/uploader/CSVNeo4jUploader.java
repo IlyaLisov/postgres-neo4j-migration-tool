@@ -10,6 +10,7 @@ import com.example.postgresneo4jmigrationtool.model.exception.InvalidFieldExcept
 import com.example.postgresneo4jmigrationtool.model.exception.MigrationException;
 import com.example.postgresneo4jmigrationtool.repository.neo4j.Neo4jRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -27,12 +28,15 @@ public class CSVNeo4jUploader implements Neo4jUploader {
 
     private final Neo4jRepository neo4jRepository;
 
+    @Value("${xml.delimiter}")
+    private String delimiter;
+
     @Override
     public UploadResult createNode(InputStream inputStream, UploadParams params) {
         UploadResult uploadResult = new UploadResult();
         try (Scanner scanner = new Scanner(inputStream)) {
             String headers = scanner.nextLine();
-            String[] columnNames = headers.split(String.valueOf(params.get("delimiter")));
+            String[] columnNames = headers.split(delimiter);
             if (columnNames.length == 0) {
                 throw new MigrationException("First row of dumped file must contain column names.");
             }
@@ -56,10 +60,10 @@ public class CSVNeo4jUploader implements Neo4jUploader {
             int nodeCounter = 0;
             while (scanner.hasNextLine()) {
                 String data = scanner.nextLine();
-                String[] values = data.split(String.valueOf(params.get("delimiter")));
-                Node node = new Node(columnNames, values, types.toArray(new String[0]));
+                String[] values = data.split(delimiter);
+                Node node = new Node(columnNames, values, types.toArray(new String[0]), labels.toArray(new String[0]));
                 node.setTimeFormat(timeFormat);
-                neo4jRepository.addNode(node, labels.toArray(new String[0]));
+                neo4jRepository.addNode(node);
                 nodeCounter++;
             }
             uploadResult.add("nodeCounter", nodeCounter);
@@ -72,9 +76,9 @@ public class CSVNeo4jUploader implements Neo4jUploader {
         UploadResult uploadResult = new UploadResult();
         try (Scanner scanner = new Scanner(inputStream)) {
             String headers = scanner.nextLine();
-            String[] columnNames = headers.split(String.valueOf(params.get("delimiter")));
-            String columnFromType = (String) params.get("columnFromType");
-            String columnToType = (String) params.get("columnToType");
+            String[] columnNames = headers.split(delimiter);
+            String sourceColumnType = (String) params.get("sourceColumnType");
+            String targetColumnType = (String) params.get("targetColumnType");
             if (columnNames.length == 0) {
                 throw new MigrationException("First row of dumped file must contain column names.");
             }
@@ -87,15 +91,15 @@ public class CSVNeo4jUploader implements Neo4jUploader {
             if (type == null || type.isEmpty()) {
                 throw new InvalidConfigurationException("Relationship must have type.");
             }
-            String labelFrom = (String) params.get("labelFrom");
-            String labelTo = (String) params.get("labelTo");
+            String sourceLabel = (String) params.get("sourceLabel");
+            String targetLabel = (String) params.get("targetLabel");
             int relationshipCounter = 0;
             while (scanner.hasNextLine()) {
                 String data = scanner.nextLine();
-                String[] values = data.split(String.valueOf(params.get("delimiter")));
-                Node nodeFrom = new Node(columnNames[0], values[0], columnFromType);
-                Node nodeTo = new Node(columnNames[1], values[1], columnToType);
-                Relationship relationship = new Relationship(nodeFrom, nodeTo, labelFrom, labelTo);
+                String[] values = data.split(delimiter);
+                Node source = new Node(columnNames[0], values[0], sourceColumnType, sourceLabel);
+                Node target = new Node(columnNames[1], values[1], targetColumnType, targetLabel);
+                Relationship relationship = new Relationship(source, target);
                 neo4jRepository.addRelationship(relationship, type);
                 relationshipCounter++;
             }
@@ -109,12 +113,12 @@ public class CSVNeo4jUploader implements Neo4jUploader {
         UploadResult uploadResult = new UploadResult();
         try (Scanner scanner = new Scanner(inputStream)) {
             String headers = scanner.nextLine();
-            String[] columnNames = headers.split(String.valueOf(params.get("delimiter")));
-            String columnFromType = (String) params.get("columnFromType");
+            String[] columnNames = headers.split(delimiter);
+            String sourceColumnType = (String) params.get("sourceColumnType");
             String valueColumnType = (String) params.get("valueColumnType");
             boolean unique = (boolean) params.get("unique");
             String fieldName = (String) params.get("fieldName");
-            String labelFrom = (String) params.get("labelFrom");
+            String sourceLabel = (String) params.get("sourceLabel");
             if (columnNames.length == 0) {
                 throw new MigrationException("First row of dumped file must contain column names.");
             }
@@ -127,7 +131,7 @@ public class CSVNeo4jUploader implements Neo4jUploader {
             Map<Object, List<Object>> fields = new HashMap<>();
             while (scanner.hasNextLine()) {
                 String data = scanner.nextLine();
-                String[] values = data.split(String.valueOf(params.get("delimiter")));
+                String[] values = data.split(delimiter);
                 String id = values[0];
                 String value = values[1];
                 if (fields.containsKey(id)) {
@@ -148,8 +152,8 @@ public class CSVNeo4jUploader implements Neo4jUploader {
                 }
             }
             for (Object key : fields.keySet()) {
-                Node node = new Node(columnNames[0], (String) key, columnFromType);
-                InnerField innerField = new InnerField(node, labelFrom, fieldName, valueColumnType, fields.get(key));
+                Node node = new Node(columnNames[0], (String) key, sourceColumnType, sourceLabel);
+                InnerField innerField = new InnerField(node, fieldName, valueColumnType, fields.get(key));
                 neo4jRepository.addInnerField(innerField);
             }
             uploadResult.add("objectCounter", objectCounter);

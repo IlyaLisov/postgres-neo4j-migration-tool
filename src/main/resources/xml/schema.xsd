@@ -98,11 +98,11 @@
 
     <xs:complexType name="relationshipConfigurationType">
         <xs:sequence>
-            <xs:element name="columnFrom" type="xs:string"/>
-            <xs:element name="labelFrom" type="xs:string"
+            <xs:element name="sourceColumn" type="xs:string"/>
+            <xs:element name="sourceLabel" type="xs:string"
                         minOccurs="0"/>
-            <xs:element name="columnTo" type="xs:string"/>
-            <xs:element name="labelTo" type="xs:string"
+            <xs:element name="targetColumn" type="xs:string"/>
+            <xs:element name="targetLabel" type="xs:string"
                         minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
@@ -131,8 +131,8 @@
 
     <xs:complexType name="innerFieldConfigurationType">
         <xs:sequence>
-            <xs:element name="columnFrom" type="xs:string"/>
-            <xs:element name="labelFrom" type="xs:string"
+            <xs:element name="sourceColumn" type="xs:string"/>
+            <xs:element name="sourceLabel" type="xs:string"
                         minOccurs="0"/>
             <xs:element name="valueColumn" type="xs:string"/>
             <xs:element name="fieldName" type="xs:string"/>

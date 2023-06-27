@@ -27,5 +27,6 @@ logging:
     root: OFF
 
 xml:
+  delimiter: ;
   script:
     path: ${XML_CONFIG_LOCATION}

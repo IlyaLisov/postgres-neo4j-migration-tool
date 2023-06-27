@@ -7,9 +7,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class Relationship {
 
-    private Node nodeFrom;
-    private Node nodeTo;
-    private String labelFrom;
-    private String labelTo;
+    private Node source;
+    private Node target;
 
 }
