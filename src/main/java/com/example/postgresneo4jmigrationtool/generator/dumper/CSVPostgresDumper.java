@@ -4,6 +4,7 @@ import com.example.postgresneo4jmigrationtool.model.DumpResult;
 import com.example.postgresneo4jmigrationtool.model.exception.MigrationException;
 import com.example.postgresneo4jmigrationtool.repository.postgres.PostgresRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -22,13 +23,14 @@ public class CSVPostgresDumper implements PostgresDumper {
     private final PostgresRepository postgresRepository;
     private final String dumpDirectory = "dump";
     private final String dumpScriptFileName = "dump_script.sh";
-    private final String delimiter = ";";
+
+    @Value("${xml.delimiter}")
+    private String delimiter;
 
     @Override
     public DumpResult dump(String tableName, Collection<String> columnsToDump) {
         DumpResult dumpResult = new DumpResult();
         dumpResult.add("dumpDirectory", dumpDirectory);
-        dumpResult.add("delimiter", delimiter);
         File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
         createFile(dumpScript);
         String columns = String.join(",", columnsToDump);
@@ -48,7 +50,6 @@ public class CSVPostgresDumper implements PostgresDumper {
     public DumpResult dumpWithForeignKeys(String tableName, String columnFrom, String columnTo) {
         DumpResult dumpResult = new DumpResult();
         dumpResult.add("dumpDirectory", dumpDirectory);
-        dumpResult.add("delimiter", delimiter);
         File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
         createFile(dumpScript);
         String foreignColumnFrom = postgresRepository.getForeignColumnName(tableName, columnFrom);
@@ -60,6 +61,31 @@ public class CSVPostgresDumper implements PostgresDumper {
                     foreignColumnFrom,
                     columnTo,
                     foreignColumnTo,
+                    tableName,
+                    delimiter,
+                    postgresRepository.getDatabaseName(),
+                    tableName);
+        } catch (IOException e) {
+            throw new MigrationException("Exception during dumping: " + e.getMessage());
+        }
+        runScript(dumpScript);
+        addInputStream(dumpResult, tableName);
+        return dumpResult;
+    }
+
+    @Override
+    public DumpResult dumpInnerFields(String tableName, String columnFrom, String valueColumn) {
+        DumpResult dumpResult = new DumpResult();
+        dumpResult.add("dumpDirectory", dumpDirectory);
+        File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
+        createFile(dumpScript);
+        String foreignColumnFrom = postgresRepository.getForeignColumnName(tableName, columnFrom);
+        try (PrintWriter writer = new PrintWriter(dumpScript)) {
+            writer.printf("psql -U %s -c \"COPY (SELECT %s as %s, %s FROM %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
+                    postgresRepository.getUsername(),
+                    columnFrom,
+                    foreignColumnFrom,
+                    valueColumn,
                     tableName,
                     delimiter,
                     postgresRepository.getDatabaseName(),

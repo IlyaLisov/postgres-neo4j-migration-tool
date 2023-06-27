@@ -11,7 +11,8 @@ User can:
 - rename columns
 - add labels to generated nodes
 - migrate relationships by migrating foreign keys
-- reformat timestamp to time format
+- reformat timestamp to custom time format
+- migrate tables as inner fields
 
 ### How to use?
 
@@ -60,15 +61,28 @@ You can validate your schema with `schema.xsd`schema.
         <tables>
             <table name="users_tasks">
                 <configuration>
-                    <columnFrom>user_id</columnFrom>
-                    <labelFrom>User</labelFrom>
-                    <columnTo>task_id</columnTo>
-                    <labelTo>Task</labelTo>
+                    <sourceColumn>user_id</sourceColumn>
+                    <sourceLabel>User</sourceLabel>
+                    <targetColumn>task_id</targetColumn>
+                    <targetLabel>Task</targetLabel>
                 </configuration>
                 <type>HAS_TASK</type>
             </table>
         </tables>
     </relationship>
+    <innerField>
+        <tables>
+            <table name="users_roles">
+                <configuration>
+                    <sourceColumn>user_id</sourceColumn>
+                    <sourceLabel>User</sourceLabel>
+                    <valueColumn>role</valueColumn>
+                    <fieldName>userRole</fieldName>
+                    <unique>true</unique>
+                </configuration>
+            </table>
+        </tables>
+    </innerField>
 </migration>
 ```
 
@@ -95,19 +109,25 @@ You can validate your schema with `schema.xsd`schema.
     added
     to Nodes.
 12) `<label>` - label tag, defines its name.
-13) `<columnFrom>` - column with foreign key to entity table. Relationship will
-    be started from Node from that table by this foreign key.
-14) `<columnTo>` - column with foreign key to entity table. Relationship will
+13) `<sourceColumn>` - column with foreign key to entity table. Relationship will
+    be started from Node from that table by this foreign key. Inner field will
+    be added to node with this primary key.
+14) `<targetColumn>` - column with foreign key to entity table. Relationship will
     be ended with Node from that table by this foreign key.
-15) `<labelFrom>` - (optional for `migration` migration) specifies label of
+15) `<sourceLabel>` - (optional for `migration`, `innerField` migration) specifies
+    label of
     start
     node to find it by
     foreign key.
-16) `<labelTo>` - (optional for `migration` migration) specifies label of end
+16) `<targetLabel>` - (optional for `migration` migration) specifies label of end
     node to
     find it by foreign
     key.
 17) `<type>` - type of the relationship.
+18) `<valueColumn>` - name of column with value for inner field migration.
+19) `<fieldName>` - name of inner field of node to set value to.
+20) `<unique>` - (optional for `innerField` migration) specify whether values in
+    inner field must be unique. False if not present.
 
 ### NOTE
 
@@ -145,7 +165,7 @@ what data was dumped and uploaded to Neo4j.
 
 Relationship migration is provided by matching nodes with provided primary key.
 So if some of your nodes have similar id, relationship will be added to each of
-them. It can be avoided but providing `<labelFrom>` and `<labelTo>` tags.
+them. It can be avoided but providing `<sourceLabel>` and `<targetLabel>` tags.
 
 We parse timestamp from database then format it to provided time format (
 from optional `<timeFormat>` tag).

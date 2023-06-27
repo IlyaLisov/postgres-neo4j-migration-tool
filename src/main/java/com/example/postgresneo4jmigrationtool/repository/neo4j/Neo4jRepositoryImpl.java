@@ -1,5 +1,6 @@
 package com.example.postgresneo4jmigrationtool.repository.neo4j;
 
+import com.example.postgresneo4jmigrationtool.model.InnerField;
 import com.example.postgresneo4jmigrationtool.model.Node;
 import com.example.postgresneo4jmigrationtool.model.Relationship;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +16,13 @@ public class Neo4jRepositoryImpl implements Neo4jRepository {
 
     @Override
     @Transactional
-    public void addNode(Node node, String... labels) {
+    public void addNode(Node node) {
         String query = "CREATE (n %s)";
         String data = node.toString();
         String preparedQuery = String.format(query, data);
-        if (labels.length > 0) {
+        if (node.getLabels().length > 0) {
             preparedQuery += " SET n :%s";
-            preparedQuery = String.format(preparedQuery, String.join(" :", labels));
+            preparedQuery = String.format(preparedQuery, String.join(" :", node.getLabels()));
         }
         neo4jClient.query(preparedQuery).fetch().all();
     }
@@ -30,18 +31,33 @@ public class Neo4jRepositoryImpl implements Neo4jRepository {
     @Transactional
     public void addRelationship(Relationship relationship, String type) {
         String query = "MATCH(nodeFrom %s %s) MATCH(nodeTo %s %s) CREATE (nodeFrom)-[:%s]->(nodeTo)";
-        if (!relationship.getLabelFrom().isEmpty()) {
-            relationship.setLabelFrom(": " + relationship.getLabelFrom());
+        if (!relationship.getSource().getLabel().isEmpty()) {
+            relationship.getSource().setLabel(": " + relationship.getSource().getLabel());
         }
-        if (!relationship.getLabelTo().isEmpty()) {
-            relationship.setLabelTo(": " + relationship.getLabelTo());
+        if (!relationship.getTarget().getLabel().isEmpty()) {
+            relationship.getTarget().setLabel(": " + relationship.getTarget().getLabel());
         }
         String preparedQuery = String.format(query,
-                relationship.getLabelFrom(),
-                relationship.getNodeFrom().toString(),
-                relationship.getLabelTo(),
-                relationship.getNodeTo().toString(),
+                relationship.getSource().getLabels()[0],
+                relationship.getSource(),
+                relationship.getTarget().getLabels()[0],
+                relationship.getTarget(),
                 type);
+        neo4jClient.query(preparedQuery).fetch().all();
+    }
+
+    @Override
+    @Transactional
+    public void addInnerField(InnerField innerField) {
+        String query = "MATCH(nodeFrom %s %s) SET nodeFrom.%s = %s";
+        if (!innerField.getSource().getLabel().isEmpty()) {
+            innerField.getSource().setLabel(": " + innerField.getSource().getLabel());
+        }
+        String preparedQuery = String.format(query,
+                innerField.getSource().getLabel(),
+                innerField.getSource(),
+                innerField.getFieldName(),
+                innerField);
         neo4jClient.query(preparedQuery).fetch().all();
     }
 

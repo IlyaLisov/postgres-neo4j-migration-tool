@@ -31,13 +31,26 @@
         <tables>
             <table name="users_tasks">
                 <configuration>
-                    <columnFrom>user_id</columnFrom>
-                    <labelFrom>User</labelFrom>
-                    <columnTo>task_id</columnTo>
-                    <labelTo>Task</labelTo>
+                    <sourceColumn>user_id</sourceColumn>
+                    <sourceLabel>User</sourceLabel>
+                    <targetColumn>task_id</targetColumn>
+                    <targetLabel>Task</targetLabel>
                 </configuration>
                 <type>HAS_TASK</type>
             </table>
         </tables>
     </relationship>
+    <innerField>
+        <tables>
+            <table name="users_roles">
+                <configuration>
+                    <sourceColumn>user_id</sourceColumn>
+                    <sourceLabel>User</sourceLabel>
+                    <valueColumn>role</valueColumn>
+                    <fieldName>userRole</fieldName>
+                    <unique>true</unique>
+                </configuration>
+            </table>
+        </tables>
+    </innerField>
 </migration>

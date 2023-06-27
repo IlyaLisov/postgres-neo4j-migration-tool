@@ -18,13 +18,34 @@ public class Node {
     private Object[] values;
     private String[] types;
     private String timeFormat;
+    private String[] labels;
 
-    public Node(String[] names, Object[] values, String[] types) {
+    public Node(String name, String value, String type, String label) {
+        this.names = new String[]{name};
+        this.values = new String[]{value};
+        this.types = new String[]{type};
+        this.labels = new String[]{label};
+    }
+
+    public Node(String[] names, Object[] values, String[] types, String[] labels) {
         this.names = names;
         this.types = types;
         this.values = values;
         if (values.length < types.length) {
             this.values = Arrays.copyOf(values, values.length + 1);
+        }
+        this.labels = labels;
+    }
+
+    public String getLabel() {
+        return labels.length > 0 ? labels[0] : "";
+    }
+
+    public void setLabel(String label) {
+        if (labels.length > 0) {
+            labels[0] = label;
+        } else {
+            labels = new String[]{label};
         }
     }
 
@@ -60,9 +81,15 @@ public class Node {
                     result.append("\"");
                 }
                 default -> {
-                    result.append("\"");
-                    result.append(values[i]);
-                    result.append("\"");
+                    if (values[i].equals("\"\"")) {
+                        result.append("\"\"");
+                    } else if (((String) values[i]).isEmpty()) {
+                        result.append("null");
+                    } else {
+                        result.append("\"");
+                        result.append(values[i]);
+                        result.append("\"");
+                    }
                 }
             }
             result.append(", ");

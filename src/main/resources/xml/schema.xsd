@@ -7,6 +7,7 @@
                             minOccurs="0"/>
                 <xs:element name="relationship"
                             type="relationshipMigration" minOccurs="0"/>
+                <xs:element name="innerField" type="innerField" minOccurs="0"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -97,11 +98,45 @@
 
     <xs:complexType name="relationshipConfigurationType">
         <xs:sequence>
-            <xs:element name="columnFrom" type="xs:string"/>
-            <xs:element name="labelFrom" type="xs:string"
+            <xs:element name="sourceColumn" type="xs:string"/>
+            <xs:element name="sourceLabel" type="xs:string"
                         minOccurs="0"/>
-            <xs:element name="columnTo" type="xs:string"/>
-            <xs:element name="labelTo" type="xs:string"
+            <xs:element name="targetColumn" type="xs:string"/>
+            <xs:element name="targetLabel" type="xs:string"
+                        minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="innerField">
+        <xs:sequence>
+            <xs:element name="tables" type="innerFieldTablesType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+
+    <xs:complexType name="innerFieldTablesType">
+        <xs:sequence>
+            <xs:element name="table" maxOccurs="unbounded"
+                        type="innerFieldTableType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="innerFieldTableType">
+        <xs:sequence>
+            <xs:element name="configuration" type="innerFieldConfigurationType"
+                        minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="innerFieldConfigurationType">
+        <xs:sequence>
+            <xs:element name="sourceColumn" type="xs:string"/>
+            <xs:element name="sourceLabel" type="xs:string"
+                        minOccurs="0"/>
+            <xs:element name="valueColumn" type="xs:string"/>
+            <xs:element name="fieldName" type="xs:string"/>
+            <xs:element name="unique" type="xs:string"
                         minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
