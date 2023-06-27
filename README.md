@@ -25,7 +25,8 @@ User can:
 Here is an example of XML configuration file for node and relationship
 migration.
 
-You can validate your schema with `schema.xsd`schema.
+You can validate your schema with default `schema.xsd` schema. You need to
+pass `XML_VALIDATION_ENABLED` property as `true`.
 
 ```
 <migration>
