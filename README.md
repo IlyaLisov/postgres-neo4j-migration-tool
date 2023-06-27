@@ -11,7 +11,8 @@ User can:
 - rename columns
 - add labels to generated nodes
 - migrate relationships by migrating foreign keys
-- reformat timestamp to time format
+- reformat timestamp to custom time format
+- migrate tables as inner fields
 
 ### How to use?
 
@@ -69,6 +70,19 @@ You can validate your schema with `schema.xsd`schema.
             </table>
         </tables>
     </relationship>
+    <innerField>
+        <tables>
+            <table name="users_roles">
+                <configuration>
+                    <columnFrom>user_id</columnFrom>
+                    <labelFrom>User</labelFrom>
+                    <valueColumn>role</valueColumn>
+                    <fieldName>userRole</fieldName>
+                    <unique>true</unique>
+                </configuration>
+            </table>
+        </tables>
+    </innerField>
 </migration>
 ```
 
@@ -96,10 +110,12 @@ You can validate your schema with `schema.xsd`schema.
     to Nodes.
 12) `<label>` - label tag, defines its name.
 13) `<columnFrom>` - column with foreign key to entity table. Relationship will
-    be started from Node from that table by this foreign key.
+    be started from Node from that table by this foreign key. Inner field will
+    be added to node with this primary key.
 14) `<columnTo>` - column with foreign key to entity table. Relationship will
     be ended with Node from that table by this foreign key.
-15) `<labelFrom>` - (optional for `migration` migration) specifies label of
+15) `<labelFrom>` - (optional for `migration`, `innerField` migration) specifies
+    label of
     start
     node to find it by
     foreign key.
@@ -108,6 +124,10 @@ You can validate your schema with `schema.xsd`schema.
     find it by foreign
     key.
 17) `<type>` - type of the relationship.
+18) `<valueColumn>` - name of column with value for inner field migration.
+19) `<fieldName>` - name of inner field of node to set value to.
+20) `<unique>` - (optional for `innerField` migration) specify whether values in
+    inner field must be unique. False if not present.
 
 ### NOTE
 

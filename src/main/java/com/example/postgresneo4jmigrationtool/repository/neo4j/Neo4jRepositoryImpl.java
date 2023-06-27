@@ -1,5 +1,6 @@
 package com.example.postgresneo4jmigrationtool.repository.neo4j;
 
+import com.example.postgresneo4jmigrationtool.model.InnerField;
 import com.example.postgresneo4jmigrationtool.model.Node;
 import com.example.postgresneo4jmigrationtool.model.Relationship;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,21 @@ public class Neo4jRepositoryImpl implements Neo4jRepository {
                 relationship.getLabelTo(),
                 relationship.getNodeTo().toString(),
                 type);
+        neo4jClient.query(preparedQuery).fetch().all();
+    }
+
+    @Override
+    @Transactional
+    public void addInnerField(InnerField innerField) {
+        String query = "MATCH(nodeFrom %s %s) SET nodeFrom.%s = %s";
+        if (!innerField.getLabel().isEmpty()) {
+            innerField.setLabel(": " + innerField.getLabel());
+        }
+        String preparedQuery = String.format(query,
+                innerField.getLabel(),
+                innerField.getNode().toString(),
+                innerField.getFieldName(),
+                innerField);
         neo4jClient.query(preparedQuery).fetch().all();
     }
 

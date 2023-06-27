@@ -11,4 +11,6 @@ public interface Neo4jUploader {
 
     UploadResult createRelationship(InputStream inputStream, UploadParams params);
 
+    UploadResult createInnerField(InputStream inputStream, UploadParams params);
+
 }

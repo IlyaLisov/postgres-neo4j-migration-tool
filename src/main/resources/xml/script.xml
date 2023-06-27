@@ -40,4 +40,17 @@
             </table>
         </tables>
     </relationship>
+    <innerField>
+        <tables>
+            <table name="users_roles">
+                <configuration>
+                    <columnFrom>user_id</columnFrom>
+                    <labelFrom>User</labelFrom>
+                    <valueColumn>role</valueColumn>
+                    <fieldName>userRole</fieldName>
+                    <unique>true</unique>
+                </configuration>
+            </table>
+        </tables>
+    </innerField>
 </migration>

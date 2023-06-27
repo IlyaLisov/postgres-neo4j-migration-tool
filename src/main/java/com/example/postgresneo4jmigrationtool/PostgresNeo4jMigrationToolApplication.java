@@ -13,7 +13,7 @@ public class PostgresNeo4jMigrationToolApplication {
     public static void main(String[] args) {
         ConfigurableApplicationContext appContext = SpringApplication.run(PostgresNeo4jMigrationToolApplication.class, args);
         try {
-            Parser parser = appContext.getBean(Parser.class);
+            Parser parser = appContext.getBean("xmlParser", Parser.class);
             parser.parse();
         } catch (Exception e) {
             System.out.println(e.getMessage());

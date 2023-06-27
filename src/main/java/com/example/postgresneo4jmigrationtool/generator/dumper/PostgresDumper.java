@@ -10,4 +10,6 @@ public interface PostgresDumper {
 
     DumpResult dumpWithForeignKeys(String tableName, String columnFrom, String columnTo);
 
+    DumpResult dumpInnerFieldTable(String tableName, String columnFrom, String columnTo);
+
 }

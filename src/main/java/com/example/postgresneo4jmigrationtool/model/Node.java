@@ -19,6 +19,12 @@ public class Node {
     private String[] types;
     private String timeFormat;
 
+    public Node(String name, String value, String type) {
+        this.names = new String[]{name};
+        this.values = new String[]{value};
+        this.types = new String[]{type};
+    }
+
     public Node(String[] names, Object[] values, String[] types) {
         this.names = names;
         this.types = types;
@@ -60,9 +66,15 @@ public class Node {
                     result.append("\"");
                 }
                 default -> {
-                    result.append("\"");
-                    result.append(values[i]);
-                    result.append("\"");
+                    if (values[i].equals("\"\"")) {
+                        result.append("\"\"");
+                    } else if (((String) values[i]).isEmpty()) {
+                        result.append("null");
+                    } else {
+                        result.append("\"");
+                        result.append(values[i]);
+                        result.append("\"");
+                    }
                 }
             }
             result.append(", ");

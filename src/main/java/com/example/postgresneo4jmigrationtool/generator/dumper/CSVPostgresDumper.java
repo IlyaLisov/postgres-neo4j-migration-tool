@@ -72,6 +72,32 @@ public class CSVPostgresDumper implements PostgresDumper {
         return dumpResult;
     }
 
+    @Override
+    public DumpResult dumpInnerFieldTable(String tableName, String columnFrom, String columnTo) {
+        DumpResult dumpResult = new DumpResult();
+        dumpResult.add("dumpDirectory", dumpDirectory);
+        dumpResult.add("delimiter", delimiter);
+        File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
+        createFile(dumpScript);
+        String foreignColumnFrom = postgresRepository.getForeignColumnName(tableName, columnFrom);
+        try (PrintWriter writer = new PrintWriter(dumpScript)) {
+            writer.printf("psql -U %s -c \"COPY (SELECT %s as %s, %s FROM %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
+                    postgresRepository.getUsername(),
+                    columnFrom,
+                    foreignColumnFrom,
+                    columnTo,
+                    tableName,
+                    delimiter,
+                    postgresRepository.getDatabaseName(),
+                    tableName);
+        } catch (IOException e) {
+            throw new MigrationException("Exception during dumping: " + e.getMessage());
+        }
+        runScript(dumpScript);
+        addInputStream(dumpResult, tableName);
+        return dumpResult;
+    }
+
     private void createFile(File file) {
         try {
             if (!file.exists()) {
