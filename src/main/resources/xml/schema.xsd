@@ -53,7 +53,8 @@
 
     <xs:complexType name="renamedColumnsType">
         <xs:sequence>
-            <xs:element name="columns" type="columnsType"/>
+            <xs:element name="columns" type="columnsType" maxOccurs="unbounded"
+                        minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 

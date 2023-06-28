@@ -58,33 +58,45 @@ public class Node {
                 break;
             }
             switch (types[i]) {
-                case "integer", "bigint", "bigserial" ->
+                case "integer", "bigint", "bigserial" -> {
+                    if (((String) values[i]).isEmpty()) {
+                        result.append("null");
+                    } else {
                         result.append(values[i]);
+                    }
+                }
                 case "boolean", "bool" -> result.append(values[i].equals("t"));
                 case "timestamp", "timestamp without time zone" -> {
-                    result.append("\"");
-                    if (timeFormat == null || timeFormat.isEmpty()) {
-                        result.append(Timestamp.valueOf((String) values[i]));
-                    } else {
-                        try {
+                    try {
+                        if (timeFormat == null || timeFormat.isEmpty()) {
+                            String resultTime = Timestamp.valueOf((String) values[i]).toString();
+                            result.append("\"");
+                            result.append(resultTime);
+                            result.append("\"");
+                        } else {
                             Timestamp time = Timestamp.valueOf(values[i].toString());
                             LocalDateTime localDateTime = time.toLocalDateTime();
                             OffsetDateTime offsetDateTime = localDateTime.atOffset(ZoneOffset.UTC);
                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(timeFormat);
                             String resultTime = offsetDateTime.format(formatter);
+                            result.append("\"");
                             result.append(resultTime);
-                        } catch (IllegalArgumentException |
-                                 DateTimeException e) {
-                            throw new InvalidConfigurationException("Invalid time format configuration: " + e.getMessage());
+                            result.append("\"");
                         }
+                    } catch (DateTimeException e) {
+                        throw new InvalidConfigurationException("Invalid time format configuration: " + e.getMessage());
+                    } catch (IllegalArgumentException e) {
+                        result.append("null");
                     }
-                    result.append("\"");
                 }
                 default -> {
                     if (values[i].equals("\"\"")) {
                         result.append("\"\"");
                     } else if (((String) values[i]).isEmpty()) {
                         result.append("null");
+                    } else if (((String) values[i]).startsWith("\"") && ((String) values[i]).endsWith("\"")) {
+                        String s = ((String) values[i]).replaceAll("\"\"", "\\\\\"");
+                        result.append(s);
                     } else {
                         result.append("\"");
                         result.append(values[i]);

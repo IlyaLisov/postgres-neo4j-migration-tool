@@ -10,11 +10,13 @@ import com.example.postgresneo4jmigrationtool.model.exception.InvalidFieldExcept
 import com.example.postgresneo4jmigrationtool.model.exception.MigrationException;
 import com.example.postgresneo4jmigrationtool.repository.neo4j.Neo4jRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +33,7 @@ public class CSVNeo4jUploader implements Neo4jUploader {
     @Value("${xml.delimiter}")
     private String delimiter;
 
+    @SneakyThrows
     @Override
     public UploadResult createNode(InputStream inputStream, UploadParams params) {
         UploadResult uploadResult = new UploadResult();
@@ -61,6 +64,18 @@ public class CSVNeo4jUploader implements Neo4jUploader {
             while (scanner.hasNextLine()) {
                 String data = scanner.nextLine();
                 String[] values = data.split(delimiter);
+                while (values[values.length - 1].startsWith("\"") && !values[values.length - 1].endsWith("\"")) {
+                    String line = scanner.nextLine();
+                    String[] additionalData = line.split(delimiter);
+                    if (additionalData.length == 1) {
+                        values[values.length - 1] += "\n" + line;
+                    } else {
+                        values[values.length - 1] += additionalData[0];
+                        int previousLength = values.length;
+                        values = Arrays.copyOf(values, values.length + additionalData.length - 1);
+                        System.arraycopy(additionalData, 1, values, previousLength - 1 + 1, additionalData.length - 1);
+                    }
+                }
                 Node node = new Node(columnNames, values, types.toArray(new String[0]), labels.toArray(new String[0]));
                 node.setTimeFormat(timeFormat);
                 neo4jRepository.addNode(node);

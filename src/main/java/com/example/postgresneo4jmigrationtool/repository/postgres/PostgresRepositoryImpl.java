@@ -97,9 +97,13 @@ public class PostgresRepositoryImpl implements PostgresRepository {
                 AND kcu.column_name = '%s';
                 """;
         String formattedQuery = String.format(query, tableName, columnName);
-        return jdbcTemplate.query(formattedQuery, (rs, rowNum) ->
-                        rs.getString("column_name"))
-                .get(0);
+        List<String> rows = jdbcTemplate.query(formattedQuery, (rs, rowNum) ->
+                rs.getString("column_name"));
+        if (rows.isEmpty()) {
+            return columnName;
+        } else {
+            return rows.get(0);
+        }
     }
 
 }
