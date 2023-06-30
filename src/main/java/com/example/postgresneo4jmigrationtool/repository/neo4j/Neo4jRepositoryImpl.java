@@ -21,8 +21,9 @@ public class Neo4jRepositoryImpl implements Neo4jRepository {
         String data = node.toString();
         String preparedQuery = String.format(query, data);
         if (node.getLabels().length > 0) {
-            preparedQuery += " SET n :%s";
-            preparedQuery = String.format(preparedQuery, String.join(" :", node.getLabels()));
+            String labels = " SET n: %s";
+            labels = String.format(labels, String.join(" :", node.getLabels()));
+            preparedQuery += labels;
         }
         neo4jClient.query(preparedQuery).fetch().all();
     }

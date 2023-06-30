@@ -95,7 +95,11 @@ public class Node {
                     } else if (((String) values[i]).isEmpty()) {
                         result.append("null");
                     } else if (((String) values[i]).startsWith("\"") && ((String) values[i]).endsWith("\"")) {
-                        String s = ((String) values[i]).replaceAll("\"\"", "\\\\\"");
+                        if (((String) values[i]).endsWith("\"\"\"")) {
+                            values[i] = ((String) values[i]).substring(((String) values[i]).length() - 3) + "\"";
+                        }
+                        String s = ((String) values[i]).replaceAll("\"\"\"", "\"\\\\\"")
+                                .replaceAll("\"\"", "\\\\\"");
                         result.append(s);
                     } else {
                         result.append("\"");

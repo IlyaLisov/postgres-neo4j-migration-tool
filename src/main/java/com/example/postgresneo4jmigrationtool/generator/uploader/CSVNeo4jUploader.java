@@ -67,7 +67,7 @@ public class CSVNeo4jUploader implements Neo4jUploader {
                     String line = scanner.nextLine();
                     String[] additionalData = line.split(delimiter);
                     if (additionalData.length == 1) {
-                        values[values.length - 1] += "\n" + line;
+                        values[values.length - 1] += "\n" + line + " ";
                     } else {
                         values[values.length - 1] += additionalData[0];
                         int previousLength = values.length;
@@ -78,6 +78,7 @@ public class CSVNeo4jUploader implements Neo4jUploader {
                 Node node = new Node(columnNames, values, types.toArray(new String[0]), labels.toArray(new String[0]));
                 node.setTimeFormat(timeFormat);
                 neo4jRepository.addNode(node);
+                System.out.println("Node " + nodeCounter + " added.");
                 nodeCounter++;
             }
             result.add("nodeCounter", nodeCounter);
@@ -127,6 +128,7 @@ public class CSVNeo4jUploader implements Neo4jUploader {
                 Node target = new Node(columnNames[1], values[1], targetColumnType, targetLabel);
                 Relationship relationship = new Relationship(source, target);
                 neo4jRepository.addRelationship(relationship, type);
+                System.out.println("Relationship " + relationshipCounter + " added.");
                 relationshipCounter++;
             }
             result.add("relationshipCounter", relationshipCounter);
