@@ -1,15 +1,15 @@
 package com.example.postgresneo4jmigrationtool.generator.dumper;
 
-import com.example.postgresneo4jmigrationtool.model.DumpResult;
+import com.example.postgresneo4jmigrationtool.model.MigrationData;
 
 import java.util.Collection;
 
 public interface PostgresDumper {
 
-    DumpResult dump(String tableName, Collection<String> columnsToDump);
+    MigrationData dump(String tableName, Collection<String> columnsToDump);
 
-    DumpResult dumpWithForeignKeys(String tableName, String columnFrom, String columnTo);
+    MigrationData dumpWithForeignKeys(String tableName, String columnFrom, String columnTo);
 
-    DumpResult dumpInnerFields(String tableName, String columnFrom, String valueColumn);
+    MigrationData dumpInnerFields(String tableName, String columnFrom, String valueColumn);
 
 }

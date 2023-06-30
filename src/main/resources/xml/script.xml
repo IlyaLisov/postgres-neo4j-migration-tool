@@ -12,6 +12,11 @@
                             <newName>newName</newName>
                         </columns>
                     </renamedColumns>
+                    <follow>
+                        <column value="OneType">dtype</column>
+                        <column value="AnotherType">dtype</column>
+                        <column value="1">id</column>
+                    </follow>
                     <timeFormat>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timeFormat>
                 </configuration>
                 <labels>
@@ -35,6 +40,12 @@
                     <sourceLabel>User</sourceLabel>
                     <targetColumn>task_id</targetColumn>
                     <targetLabel>Task</targetLabel>
+                    <follow>
+                        <column value="2">user_id</column>
+                    </follow>
+                    <skip>
+                        <column value="1">user_id</column>
+                    </skip>
                 </configuration>
                 <type>HAS_TASK</type>
             </table>

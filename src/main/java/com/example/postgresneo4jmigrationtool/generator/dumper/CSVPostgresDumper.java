@@ -1,6 +1,6 @@
 package com.example.postgresneo4jmigrationtool.generator.dumper;
 
-import com.example.postgresneo4jmigrationtool.model.DumpResult;
+import com.example.postgresneo4jmigrationtool.model.MigrationData;
 import com.example.postgresneo4jmigrationtool.model.exception.MigrationException;
 import com.example.postgresneo4jmigrationtool.repository.postgres.PostgresRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +28,9 @@ public class CSVPostgresDumper implements PostgresDumper {
     private String delimiter;
 
     @Override
-    public DumpResult dump(String tableName, Collection<String> columnsToDump) {
-        DumpResult dumpResult = new DumpResult();
-        dumpResult.add("dumpDirectory", dumpDirectory);
+    public MigrationData dump(String tableName, Collection<String> columnsToDump) {
+        MigrationData migrationData = new MigrationData();
+        migrationData.add("dumpDirectory", dumpDirectory);
         File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
         createFile(dumpScript);
         String columns = String.join(",", columnsToDump);
@@ -42,14 +42,14 @@ public class CSVPostgresDumper implements PostgresDumper {
             throw new MigrationException("Exception during dumping: " + e.getMessage());
         }
         runScript(dumpScript);
-        addInputStream(dumpResult, tableName);
-        return dumpResult;
+        addInputStream(migrationData, tableName);
+        return migrationData;
     }
 
     @Override
-    public DumpResult dumpWithForeignKeys(String tableName, String columnFrom, String columnTo) {
-        DumpResult dumpResult = new DumpResult();
-        dumpResult.add("dumpDirectory", dumpDirectory);
+    public MigrationData dumpWithForeignKeys(String tableName, String columnFrom, String columnTo) {
+        MigrationData migrationData = new MigrationData();
+        migrationData.add("dumpDirectory", dumpDirectory);
         File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
         createFile(dumpScript);
         String foreignColumnFrom = postgresRepository.getForeignColumnName(tableName, columnFrom);
@@ -69,14 +69,14 @@ public class CSVPostgresDumper implements PostgresDumper {
             throw new MigrationException("Exception during dumping: " + e.getMessage());
         }
         runScript(dumpScript);
-        addInputStream(dumpResult, tableName);
-        return dumpResult;
+        addInputStream(migrationData, tableName);
+        return migrationData;
     }
 
     @Override
-    public DumpResult dumpInnerFields(String tableName, String columnFrom, String valueColumn) {
-        DumpResult dumpResult = new DumpResult();
-        dumpResult.add("dumpDirectory", dumpDirectory);
+    public MigrationData dumpInnerFields(String tableName, String columnFrom, String valueColumn) {
+        MigrationData migrationData = new MigrationData();
+        migrationData.add("dumpDirectory", dumpDirectory);
         File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
         createFile(dumpScript);
         String foreignColumnFrom = postgresRepository.getForeignColumnName(tableName, columnFrom);
@@ -94,8 +94,8 @@ public class CSVPostgresDumper implements PostgresDumper {
             throw new MigrationException("Exception during dumping: " + e.getMessage());
         }
         runScript(dumpScript);
-        addInputStream(dumpResult, tableName);
-        return dumpResult;
+        addInputStream(migrationData, tableName);
+        return migrationData;
     }
 
     private void createFile(File file) {
@@ -121,10 +121,10 @@ public class CSVPostgresDumper implements PostgresDumper {
         }
     }
 
-    private void addInputStream(DumpResult dumpResult, String tableName) {
+    private void addInputStream(MigrationData migrationData, String tableName) {
         try {
             InputStream inputStream = new FileInputStream(dumpDirectory + "/" + tableName + ".csv");
-            dumpResult.add("inputStream", inputStream);
+            migrationData.add("inputStream", inputStream);
         } catch (FileNotFoundException e) {
             throw new MigrationException("Migration script file was not found.");
         }

@@ -2,9 +2,7 @@ package com.example.postgresneo4jmigrationtool.parser;
 
 import com.example.postgresneo4jmigrationtool.generator.dumper.PostgresDumper;
 import com.example.postgresneo4jmigrationtool.generator.uploader.Neo4jUploader;
-import com.example.postgresneo4jmigrationtool.model.DumpResult;
-import com.example.postgresneo4jmigrationtool.model.UploadParams;
-import com.example.postgresneo4jmigrationtool.model.UploadResult;
+import com.example.postgresneo4jmigrationtool.model.MigrationData;
 import com.example.postgresneo4jmigrationtool.model.exception.InvalidConfigurationException;
 import com.example.postgresneo4jmigrationtool.repository.postgres.PostgresRepository;
 import com.jcabi.xml.XML;
@@ -34,22 +32,28 @@ public class NodeXmlParser implements Parser {
             List<XML> configurationTag = table.nodes("configuration");
             List<String> excludedColumns = new ArrayList<>();
             Map<String, String> renamedColumns = new LinkedHashMap<>();
+            Map<String, List<String>> followRows = new LinkedHashMap<>();
+            Map<String, List<String>> skipRows = new LinkedHashMap<>();
             String timeFormat = "";
             if (!configurationTag.isEmpty()) {
                 XML configuration = configurationTag.get(0);
                 excludedColumns = getExcludedColumns(configuration);
                 renamedColumns = getRenamedColumns(configuration);
+                followRows = new TextXpath(configuration).getPreferredColumns("follow");
+                skipRows = new TextXpath(configuration).getPreferredColumns("skip");
                 timeFormat = new TextXpath(table).getInnerValue("configuration", "timeFormat");
             }
             List<String> labels = getLabels(table);
             Map<String, String> tablesToDump = getColumns(tableName, excludedColumns);
-            DumpResult dumpResult = dumper.dump(tableName, tablesToDump.keySet());
-            UploadParams uploadParams = new UploadParams();
+            MigrationData migrationData = dumper.dump(tableName, tablesToDump.keySet());
+            MigrationData uploadParams = new MigrationData();
             uploadParams.add("newNames", renamedColumns);
             uploadParams.add("labels", labels);
             uploadParams.add("types", tablesToDump.values());
             uploadParams.add("timeFormat", timeFormat);
-            UploadResult uploadResult = uploader.createNode((InputStream) dumpResult.get("inputStream"), uploadParams);
+            uploadParams.add("followRows", followRows);
+            uploadParams.add("skipRows", skipRows);
+            MigrationData uploadResult = uploader.createNode((InputStream) migrationData.get("inputStream"), uploadParams);
             System.out.println("Table " + tableName + " successfully uploaded to Neo4j.");
             System.out.println("Created " + uploadResult.get("nodeCounter") + " nodes.\n");
         }
