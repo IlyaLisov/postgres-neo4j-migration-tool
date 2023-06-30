@@ -1,20 +1,21 @@
 package com.example.postgresneo4jmigrationtool.generator.uploader;
 
 import com.example.postgresneo4jmigrationtool.model.InnerField;
+import com.example.postgresneo4jmigrationtool.model.MigrationData;
 import com.example.postgresneo4jmigrationtool.model.Node;
 import com.example.postgresneo4jmigrationtool.model.Relationship;
-import com.example.postgresneo4jmigrationtool.model.UploadParams;
-import com.example.postgresneo4jmigrationtool.model.UploadResult;
 import com.example.postgresneo4jmigrationtool.model.exception.InvalidConfigurationException;
 import com.example.postgresneo4jmigrationtool.model.exception.InvalidFieldException;
 import com.example.postgresneo4jmigrationtool.model.exception.MigrationException;
 import com.example.postgresneo4jmigrationtool.repository.neo4j.Neo4jRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,9 +32,10 @@ public class CSVNeo4jUploader implements Neo4jUploader {
     @Value("${xml.delimiter}")
     private String delimiter;
 
+    @SneakyThrows
     @Override
-    public UploadResult createNode(InputStream inputStream, UploadParams params) {
-        UploadResult uploadResult = new UploadResult();
+    public MigrationData createNode(InputStream inputStream, MigrationData params) {
+        MigrationData result = new MigrationData();
         try (Scanner scanner = new Scanner(inputStream)) {
             String headers = scanner.nextLine();
             String[] columnNames = headers.split(delimiter);
@@ -61,19 +63,32 @@ public class CSVNeo4jUploader implements Neo4jUploader {
             while (scanner.hasNextLine()) {
                 String data = scanner.nextLine();
                 String[] values = data.split(delimiter);
+                while (values[values.length - 1].startsWith("\"") && !values[values.length - 1].endsWith("\"")) {
+                    String line = scanner.nextLine();
+                    String[] additionalData = line.split(delimiter);
+                    if (additionalData.length == 1) {
+                        values[values.length - 1] += "\n" + line + " ";
+                    } else {
+                        values[values.length - 1] += additionalData[0];
+                        int previousLength = values.length;
+                        values = Arrays.copyOf(values, values.length + additionalData.length - 1);
+                        System.arraycopy(additionalData, 1, values, previousLength - 1 + 1, additionalData.length - 1);
+                    }
+                }
                 Node node = new Node(columnNames, values, types.toArray(new String[0]), labels.toArray(new String[0]));
                 node.setTimeFormat(timeFormat);
                 neo4jRepository.addNode(node);
+                System.out.println("Node " + nodeCounter + " added.");
                 nodeCounter++;
             }
-            uploadResult.add("nodeCounter", nodeCounter);
+            result.add("nodeCounter", nodeCounter);
         }
-        return uploadResult;
+        return result;
     }
 
     @Override
-    public UploadResult createRelationship(InputStream inputStream, UploadParams params) {
-        UploadResult uploadResult = new UploadResult();
+    public MigrationData createRelationship(InputStream inputStream, MigrationData params) {
+        MigrationData result = new MigrationData();
         try (Scanner scanner = new Scanner(inputStream)) {
             String headers = scanner.nextLine();
             String[] columnNames = headers.split(delimiter);
@@ -97,20 +112,33 @@ public class CSVNeo4jUploader implements Neo4jUploader {
             while (scanner.hasNextLine()) {
                 String data = scanner.nextLine();
                 String[] values = data.split(delimiter);
+                while (values[values.length - 1].startsWith("\"") && !values[values.length - 1].endsWith("\"")) {
+                    String line = scanner.nextLine();
+                    String[] additionalData = line.split(delimiter);
+                    if (additionalData.length == 1) {
+                        values[values.length - 1] += "\n" + line;
+                    } else {
+                        values[values.length - 1] += additionalData[0];
+                        int previousLength = values.length;
+                        values = Arrays.copyOf(values, values.length + additionalData.length - 1);
+                        System.arraycopy(additionalData, 1, values, previousLength - 1 + 1, additionalData.length - 1);
+                    }
+                }
                 Node source = new Node(columnNames[0], values[0], sourceColumnType, sourceLabel);
                 Node target = new Node(columnNames[1], values[1], targetColumnType, targetLabel);
                 Relationship relationship = new Relationship(source, target);
                 neo4jRepository.addRelationship(relationship, type);
+                System.out.println("Relationship " + relationshipCounter + " added.");
                 relationshipCounter++;
             }
-            uploadResult.add("relationshipCounter", relationshipCounter);
+            result.add("relationshipCounter", relationshipCounter);
         }
-        return uploadResult;
+        return result;
     }
 
     @Override
-    public UploadResult createInnerField(InputStream inputStream, UploadParams params) {
-        UploadResult uploadResult = new UploadResult();
+    public MigrationData createInnerField(InputStream inputStream, MigrationData params) {
+        MigrationData result = new MigrationData();
         try (Scanner scanner = new Scanner(inputStream)) {
             String headers = scanner.nextLine();
             String[] columnNames = headers.split(delimiter);
@@ -156,9 +184,9 @@ public class CSVNeo4jUploader implements Neo4jUploader {
                 InnerField innerField = new InnerField(node, fieldName, valueColumnType, fields.get(key));
                 neo4jRepository.addInnerField(innerField);
             }
-            uploadResult.add("objectCounter", objectCounter);
+            result.add("objectCounter", objectCounter);
         }
-        return uploadResult;
+        return result;
     }
 
 }

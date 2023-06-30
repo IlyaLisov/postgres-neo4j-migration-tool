@@ -31,6 +31,6 @@ xml:
     enabled: ${XML_VALIDATION_ENABLED}
     schema:
       path: ${XSD_SCHEMA_LOCATION}
-  delimiter: ;
+  delimiter: '~'
   script:
     path: ${XML_CONFIG_LOCATION}

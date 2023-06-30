@@ -2,9 +2,7 @@ package com.example.postgresneo4jmigrationtool.parser;
 
 import com.example.postgresneo4jmigrationtool.generator.dumper.PostgresDumper;
 import com.example.postgresneo4jmigrationtool.generator.uploader.Neo4jUploader;
-import com.example.postgresneo4jmigrationtool.model.DumpResult;
-import com.example.postgresneo4jmigrationtool.model.UploadParams;
-import com.example.postgresneo4jmigrationtool.model.UploadResult;
+import com.example.postgresneo4jmigrationtool.model.MigrationData;
 import com.example.postgresneo4jmigrationtool.repository.postgres.PostgresRepository;
 import com.jcabi.xml.XML;
 import lombok.Data;
@@ -34,14 +32,14 @@ public class InnerFieldXmlParser implements Parser {
             String fieldName = new TextXpath(table).getInnerValue("configuration", "fieldName");
             String sourceColumnType = postgresRepository.getColumnType(tableName, sourceColumn);
             String valueColumnType = postgresRepository.getColumnType(tableName, valueColumn);
-            DumpResult dumpResult = dumper.dumpInnerFields(tableName, sourceColumn, valueColumn);
-            UploadParams uploadParams = new UploadParams();
+            MigrationData migrationData = dumper.dumpInnerFields(tableName, sourceColumn, valueColumn);
+            MigrationData uploadParams = new MigrationData();
             uploadParams.add("sourceLabel", sourceLabel);
             uploadParams.add("sourceColumnType", sourceColumnType);
             uploadParams.add("valueColumnType", valueColumnType);
             uploadParams.add("unique", unique.equals("true"));
             uploadParams.add("fieldName", fieldName);
-            UploadResult uploadResult = uploader.createInnerField((InputStream) dumpResult.get("inputStream"), uploadParams);
+            MigrationData uploadResult = uploader.createInnerField((InputStream) migrationData.get("inputStream"), uploadParams);
             System.out.println("Table " + tableName + " successfully uploaded to Neo4j.");
             System.out.println("Created " + uploadResult.get("objectCounter") + " objects.\n");
         }

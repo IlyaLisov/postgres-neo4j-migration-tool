@@ -1,6 +1,6 @@
 package com.example.postgresneo4jmigrationtool.generator.dumper;
 
-import com.example.postgresneo4jmigrationtool.model.DumpResult;
+import com.example.postgresneo4jmigrationtool.model.MigrationData;
 import com.example.postgresneo4jmigrationtool.model.exception.MigrationException;
 import com.example.postgresneo4jmigrationtool.repository.postgres.PostgresRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -28,40 +29,78 @@ public class CSVPostgresDumper implements PostgresDumper {
     private String delimiter;
 
     @Override
-    public DumpResult dump(String tableName, Collection<String> columnsToDump) {
-        DumpResult dumpResult = new DumpResult();
-        dumpResult.add("dumpDirectory", dumpDirectory);
+    public MigrationData dump(String tableName, Collection<String> columnsToDump, MigrationData params) {
+        MigrationData migrationData = new MigrationData();
+        migrationData.add("dumpDirectory", dumpDirectory);
         File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
         createFile(dumpScript);
         String columns = String.join(",", columnsToDump);
+        Map<String, List<String>> followRows = (Map<String, List<String>>) params.get("followRows");
+        Map<String, List<String>> skipRows = (Map<String, List<String>>) params.get("skipRows");
+        String follow = "true = true";
+        if (!followRows.isEmpty()) {
+            for (String key : followRows.keySet()) {
+                List<String> values = followRows.get(key);
+                String valuesString = "'" + String.join("', '", values) + "'";
+                follow += String.format(" AND %s IN (%s)", key, valuesString);
+            }
+        }
+        String skip = "true = true";
+        if (!followRows.isEmpty()) {
+            for (String key : skipRows.keySet()) {
+                List<String> values = skipRows.get(key);
+                String valuesString = "'" + String.join("', '", values) + "'";
+                skip += String.format(" AND %s NOT IN (%s)", key, valuesString);
+            }
+        }
         try (PrintWriter writer = new PrintWriter(dumpScript)) {
-            writer.printf("psql -U %s -c \"COPY (SELECT %s FROM %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
-                    postgresRepository.getUsername(), columns, tableName, delimiter,
+            writer.printf("psql -U %s -c \"COPY (SELECT %s FROM %s WHERE %s AND %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
+                    postgresRepository.getUsername(), columns, tableName, follow, skip, delimiter,
                     postgresRepository.getDatabaseName(), tableName);
         } catch (IOException e) {
             throw new MigrationException("Exception during dumping: " + e.getMessage());
         }
         runScript(dumpScript);
-        addInputStream(dumpResult, tableName);
-        return dumpResult;
+        addInputStream(migrationData, tableName);
+        return migrationData;
     }
 
     @Override
-    public DumpResult dumpWithForeignKeys(String tableName, String columnFrom, String columnTo) {
-        DumpResult dumpResult = new DumpResult();
-        dumpResult.add("dumpDirectory", dumpDirectory);
+    public MigrationData dumpWithForeignKeys(String tableName, String columnFrom, String columnTo, MigrationData params) {
+        MigrationData migrationData = new MigrationData();
+        migrationData.add("dumpDirectory", dumpDirectory);
         File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
         createFile(dumpScript);
         String foreignColumnFrom = postgresRepository.getForeignColumnName(tableName, columnFrom);
         String foreignColumnTo = postgresRepository.getForeignColumnName(tableName, columnTo);
+        Map<String, List<String>> followRows = (Map<String, List<String>>) params.get("followRows");
+        Map<String, List<String>> skipRows = (Map<String, List<String>>) params.get("skipRows");
+        String follow = "true = true";
+        if (!followRows.isEmpty()) {
+            for (String key : followRows.keySet()) {
+                List<String> values = followRows.get(key);
+                String valuesString = "'" + String.join("', '", values) + "'";
+                follow += String.format(" AND %s IN (%s)", key, valuesString);
+            }
+        }
+        String skip = "true = true";
+        if (!followRows.isEmpty()) {
+            for (String key : skipRows.keySet()) {
+                List<String> values = skipRows.get(key);
+                String valuesString = "'" + String.join("', '", values) + "'";
+                skip += String.format(" AND %s NOT IN (%s)", key, valuesString);
+            }
+        }
         try (PrintWriter writer = new PrintWriter(dumpScript)) {
-            writer.printf("psql -U %s -c \"COPY (SELECT %s as %s, %s as %s FROM %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
+            writer.printf("psql -U %s -c \"COPY (SELECT %s as %s, %s as %s FROM %s WHERE %s AND %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
                     postgresRepository.getUsername(),
                     columnFrom,
                     foreignColumnFrom,
                     columnTo,
                     foreignColumnTo,
                     tableName,
+                    follow,
+                    skip,
                     delimiter,
                     postgresRepository.getDatabaseName(),
                     tableName);
@@ -69,14 +108,14 @@ public class CSVPostgresDumper implements PostgresDumper {
             throw new MigrationException("Exception during dumping: " + e.getMessage());
         }
         runScript(dumpScript);
-        addInputStream(dumpResult, tableName);
-        return dumpResult;
+        addInputStream(migrationData, tableName);
+        return migrationData;
     }
 
     @Override
-    public DumpResult dumpInnerFields(String tableName, String columnFrom, String valueColumn) {
-        DumpResult dumpResult = new DumpResult();
-        dumpResult.add("dumpDirectory", dumpDirectory);
+    public MigrationData dumpInnerFields(String tableName, String columnFrom, String valueColumn) {
+        MigrationData migrationData = new MigrationData();
+        migrationData.add("dumpDirectory", dumpDirectory);
         File dumpScript = new File(dumpDirectory + "/" + dumpScriptFileName);
         createFile(dumpScript);
         String foreignColumnFrom = postgresRepository.getForeignColumnName(tableName, columnFrom);
@@ -94,8 +133,8 @@ public class CSVPostgresDumper implements PostgresDumper {
             throw new MigrationException("Exception during dumping: " + e.getMessage());
         }
         runScript(dumpScript);
-        addInputStream(dumpResult, tableName);
-        return dumpResult;
+        addInputStream(migrationData, tableName);
+        return migrationData;
     }
 
     private void createFile(File file) {
@@ -121,10 +160,10 @@ public class CSVPostgresDumper implements PostgresDumper {
         }
     }
 
-    private void addInputStream(DumpResult dumpResult, String tableName) {
+    private void addInputStream(MigrationData migrationData, String tableName) {
         try {
             InputStream inputStream = new FileInputStream(dumpDirectory + "/" + tableName + ".csv");
-            dumpResult.add("inputStream", inputStream);
+            migrationData.add("inputStream", inputStream);
         } catch (FileNotFoundException e) {
             throw new MigrationException("Migration script file was not found.");
         }

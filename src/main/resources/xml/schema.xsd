@@ -40,6 +40,8 @@
                         minOccurs="0"/>
             <xs:element name="renamedColumns" type="renamedColumnsType"
                         minOccurs="0"/>
+            <xs:element name="follow" type="followType" minOccurs="0"/>
+            <xs:element name="skip" type="skipType" minOccurs="0"/>
             <xs:element name="timeFormat" type="xs:string" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
@@ -53,7 +55,8 @@
 
     <xs:complexType name="renamedColumnsType">
         <xs:sequence>
-            <xs:element name="columns" type="columnsType"/>
+            <xs:element name="columns" type="columnsType" maxOccurs="unbounded"
+                        minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -62,6 +65,28 @@
             <xs:element name="previousName" type="xs:string"/>
             <xs:element name="newName" type="xs:string"/>
         </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="followType">
+        <xs:sequence>
+            <xs:element name="column" type="preferredColumn" minOccurs="0"
+                        maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="skipType">
+        <xs:sequence>
+            <xs:element name="column" type="preferredColumn" minOccurs="0"
+                        maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="preferredColumn">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="value" type="xs:string"/>
+            </xs:extension>
+        </xs:simpleContent>
     </xs:complexType>
 
     <xs:complexType name="labelsType">
@@ -104,6 +129,8 @@
             <xs:element name="targetColumn" type="xs:string"/>
             <xs:element name="targetLabel" type="xs:string"
                         minOccurs="0"/>
+            <xs:element name="follow" type="followType" minOccurs="0"/>
+            <xs:element name="skip" type="skipType" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 
