@@ -43,6 +43,12 @@ pass `XML_VALIDATION_ENABLED` property as `true`.
                             <newName>newName</newName>
                         </columns>
                     </renamedColumns>
+                    <follow>
+                        <column value="OneType">dtype</column>
+                    </follow>
+                    <skip>
+                        <column value="AnotherType">dtype</column>
+                    </skip>
                     <timeFormat>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timeFormat>
                 </configuration>
                 <labels>
@@ -66,6 +72,12 @@ pass `XML_VALIDATION_ENABLED` property as `true`.
                     <sourceLabel>User</sourceLabel>
                     <targetColumn>task_id</targetColumn>
                     <targetLabel>Task</targetLabel>
+                    <follow>
+                        <column value="OneType">dtype</column>
+                    </follow>
+                    <skip>
+                        <column value="AnotherType">dtype</column>
+                    </skip>
                 </configuration>
                 <type>HAS_TASK</type>
             </table>
@@ -102,32 +114,44 @@ pass `XML_VALIDATION_ENABLED` property as `true`.
 8) `<column>` - column tag, contains table name.
 9) `<renamedColumns>` - (optional for `node` migration) columns to be renamed
    during migration. It means data from column with `<previousName>`
-   will be stored as `<newName>` property;
-10) `<timeFormat>` - (optional for `node` migration) format of timestamp to
+   will be stored as `<newName>` property.
+10) `<follow>` - (optional for `node`, `relationship` migration) follows only
+    that rows which cells in these columns are equal to `value` attribute
+    of `<column>` tag. If multiple columns are provided, all columns match is
+    required to migrate it.
+11) `<skip>` - (optional for `node`, `relationship` migration) skips only
+    that rows which cells in these columns are equal to `value` attribute
+    of `<column>` tag. If multiple columns are provided, at least one match is
+    required to skip it.
+12) `<timeFormat>` - (optional for `node` migration) format of timestamp to
     store in Neo4j. It is needed to store LocalDateTime and access it without
     converters in code.
-11) `<labels>` - (optional for `node` migration) collection of labels to be
+13) `<labels>` - (optional for `node` migration) collection of labels to be
     added
     to Nodes.
-12) `<label>` - label tag, defines its name.
-13) `<sourceColumn>` - column with foreign key to entity table. Relationship will
+14) `<label>` - label tag, defines its name.
+15) `<sourceColumn>` - column with foreign key to entity table. Relationship
+    will
     be started from Node from that table by this foreign key. Inner field will
     be added to node with this primary key.
-14) `<targetColumn>` - column with foreign key to entity table. Relationship will
+16) `<targetColumn>` - column with foreign key to entity table. Relationship
+    will
     be ended with Node from that table by this foreign key.
-15) `<sourceLabel>` - (optional for `migration`, `innerField` migration) specifies
+17) `<sourceLabel>` - (optional for `relationship`, `innerField` migration)
+    specifies
     label of
     start
     node to find it by
     foreign key.
-16) `<targetLabel>` - (optional for `migration` migration) specifies label of end
+18) `<targetLabel>` - (optional for `relationship` migration) specifies label of
+    end
     node to
     find it by foreign
     key.
-17) `<type>` - type of the relationship.
-18) `<valueColumn>` - name of column with value for inner field migration.
-19) `<fieldName>` - name of inner field of node to set value to.
-20) `<unique>` - (optional for `innerField` migration) specify whether values in
+19) `<type>` - type of the relationship.
+20) `<valueColumn>` - name of column with value for inner field migration.
+21) `<fieldName>` - name of inner field of node to set value to.
+22) `<unique>` - (optional for `innerField` migration) specify whether values in
     inner field must be unique. False if not present.
 
 ### NOTE
@@ -144,12 +168,23 @@ Note that at first we exclude columns and only after rename them. So if you will
 rename excluded columns, it was excluded and no columns with this name will be
 renamed.
 
+We first handle `<skip>` rows, it means if row matches `<skip>` rule and it
+matches `<follow>` rule, it won`t be migrated.
+
+By providing several values for one column, they are considered as array of
+available values. If this array contains cell value, `<skip>` rule will skip
+this row, `<follow>` rule will follow this row.
+
 We handle Postgres types in generated JSON the following way:
 
 - `integer`, `bigserial`, `biginteger` are considered numeric values
 - `bool`, `boolean` are considered boolean values
 - `timestamp`, `timestamp without time zone` as timestamp
 - other types - strings.
+
+If there are `null` in cell, we store this as `null` too, so it won`t be saved
+to
+node.
 
 We recommend to fill up all tags to be sure that correct data will
 be saved to Neo4j.

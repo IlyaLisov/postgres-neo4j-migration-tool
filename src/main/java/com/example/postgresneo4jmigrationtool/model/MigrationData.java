@@ -8,11 +8,11 @@ import java.util.Map;
 
 @Data
 @AllArgsConstructor
-public class UploadParams {
+public class MigrationData {
 
     private Map<String, Object> params;
 
-    public UploadParams() {
+    public MigrationData() {
         this.params = new HashMap<>();
     }
 

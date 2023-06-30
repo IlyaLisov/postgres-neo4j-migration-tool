@@ -1,16 +1,15 @@
 package com.example.postgresneo4jmigrationtool.generator.uploader;
 
-import com.example.postgresneo4jmigrationtool.model.UploadParams;
-import com.example.postgresneo4jmigrationtool.model.UploadResult;
+import com.example.postgresneo4jmigrationtool.model.MigrationData;
 
 import java.io.InputStream;
 
 public interface Neo4jUploader {
 
-    UploadResult createNode(InputStream inputStream, UploadParams params);
+    MigrationData createNode(InputStream inputStream, MigrationData params);
 
-    UploadResult createRelationship(InputStream inputStream, UploadParams params);
+    MigrationData createRelationship(InputStream inputStream, MigrationData params);
 
-    UploadResult createInnerField(InputStream inputStream, UploadParams params);
+    MigrationData createInnerField(InputStream inputStream, MigrationData params);
 
 }
