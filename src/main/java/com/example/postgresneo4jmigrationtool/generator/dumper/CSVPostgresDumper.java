@@ -91,8 +91,10 @@ public class CSVPostgresDumper implements PostgresDumper {
                 skip += String.format(" AND %s NOT IN (%s)", key, valuesString);
             }
         }
+        String fromNotNull = columnFrom + " IS NOT NULL ";
+        String toNotNull = columnTo + " IS NOT NULL ";
         try (PrintWriter writer = new PrintWriter(dumpScript)) {
-            writer.printf("psql -U %s -c \"COPY (SELECT %s as %s, %s as %s FROM %s WHERE %s AND %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
+            writer.printf("psql -U %s -c \"COPY (SELECT %s as %s, %s as %s FROM %s WHERE %s AND %s AND %s AND %s) TO STDOUT WITH CSV DELIMITER '%s' HEADER\" %s > %s.csv",
                     postgresRepository.getUsername(),
                     columnFrom,
                     foreignColumnFrom,
@@ -101,6 +103,8 @@ public class CSVPostgresDumper implements PostgresDumper {
                     tableName,
                     follow,
                     skip,
+                    fromNotNull,
+                    toNotNull,
                     delimiter,
                     postgresRepository.getDatabaseName(),
                     tableName);
